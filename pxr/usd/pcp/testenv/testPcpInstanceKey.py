@@ -30,8 +30,7 @@ import unittest
 class TestPcpInstanceKey(unittest.TestCase):
     def _LoadPcpCache(self, layerPath):
         rootLayer = Sdf.Layer.FindOrOpen(layerPath)
-        cache = Pcp.Cache(Pcp.LayerStackIdentifier(rootLayer), usd=True)
-        return cache
+        return Pcp.Cache(Pcp.LayerStackIdentifier(rootLayer), usd=True)
 
     def _GetInstanceKey(self, cache, primPath):
         (pi, err) = cache.ComputePrimIndex(primPath)

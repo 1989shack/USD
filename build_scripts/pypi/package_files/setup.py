@@ -92,17 +92,15 @@ with open("README.md", "r") as fh:
 # Get the library version number from the installed pxr.h header.
 with open(os.path.join(USD_BUILD_OUTPUT, "include/pxr/pxr.h"), "r") as fh:
     for line in fh:
-        m = re.match("#define PXR_MINOR_VERSION (\d+)", line)
-        if m:
+        if m := re.match("#define PXR_MINOR_VERSION (\d+)", line):
             minorVersion = m.groups(1)[0]
             continue
 
-        m = re.match("#define PXR_PATCH_VERSION (\d+)", line)
-        if m:
+        if m := re.match("#define PXR_PATCH_VERSION (\d+)", line):
             patchVersion = m.groups(1)[0]
             continue
 
-version = "{}.{}".format(minorVersion, patchVersion)
+version = f"{minorVersion}.{patchVersion}"
 
 # Config
 setuptools.setup(

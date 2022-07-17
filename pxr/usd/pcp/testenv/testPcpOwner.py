@@ -143,8 +143,11 @@ class TestPcpOwner(unittest.TestCase):
 
         for err in errors:
             print(err, file=sys.stderr)
-            self.assertTrue(isinstance(err, Pcp.ErrorInvalidSublayerOwnership),
-                   "Unexpected Error: %s" % err)
+            self.assertTrue(
+                isinstance(err, Pcp.ErrorInvalidSublayerOwnership),
+                f"Unexpected Error: {err}",
+            )
+
 
         self.assertEqual(len(errors), 1)
 

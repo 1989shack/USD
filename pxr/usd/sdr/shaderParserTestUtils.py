@@ -51,9 +51,7 @@ def GetType(property):
     """
     sdfTypeIndicator = property.GetTypeAsSdfType()
     sdfValueTypeName = sdfTypeIndicator[0]
-    tfType = sdfValueTypeName.type
-
-    return tfType
+    return sdfValueTypeName.type
 
 def TestBasicProperties(node):
     """

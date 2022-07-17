@@ -44,7 +44,7 @@ class TestNamedTemporaryFile(unittest.TestCase):
 
         base = os.path.basename
         argError = '%s argument (%s) not captured in file name: %s.'
-        
+
         for i, f in enumerate(fs):
             n = f.name
             p = self.prefixes[i]

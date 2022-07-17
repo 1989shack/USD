@@ -42,8 +42,8 @@ class TestArResolverContext(unittest.TestCase):
     def test_Repr(self):
         ctxObj = Ar.DefaultResolverContext(["/test"])
         ctx = Ar.ResolverContext(ctxObj)
-        
-        expectedRepr = "Ar.ResolverContext({})".format(repr(ctxObj))
+
+        expectedRepr = f"Ar.ResolverContext({repr(ctxObj)})"
         self.assertEqual(str(ctx), expectedRepr)
         self.assertEqual(repr(ctx), expectedRepr)
 

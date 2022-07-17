@@ -77,9 +77,8 @@ class TestPcpDependencies(unittest.TestCase):
                 return 1
             if id(a.mapFunc) < id(b.mapFunc):
                 return -1
-            if id(a.mapFunc) > id(b.mapFunc):
-                return 1
-            return 0
+            return 1 if id(a.mapFunc) > id(b.mapFunc) else 0
+
         # functools is used here to support python 2 and 3. In Python 3 there
         # is no cmp parameter, only a function that gives a key value. This
         # functools function exists to convert a cmp function to a key function.

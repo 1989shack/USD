@@ -75,10 +75,10 @@ def CreateModelStage(assetName,
             kind)
         print(Kind.Registry.GetAllKinds())
         return None
-    
+
     # Create the root file for the stage, and make it ASCII text.
     # We need some nicer sugar for this.
-    fileName = assetName + ".usd"
+    fileName = f"{assetName}.usd"
     rootLayer = Sdf.Layer.CreateNew(fileName, args = {'format':'usda'})
     stage = Usd.Stage.Open(rootLayer)
 
@@ -95,15 +95,15 @@ def CreateModelStage(assetName,
     # for more on assetInfo
     modelAPI.SetAssetName(assetName)
     modelAPI.SetAssetIdentifier(assetIdentifier or fileName)
-    
+
     # Add a class named after the asset, and make the asset inherit from it.
     # This is not necessary for a valid asset, and the class-naming is a Pixar
     # convention.  But always having a class associated with each asset is
     # extremely useful for non-destructively editing many referenced or
     # instanced assets of the same type.
-    classPrim = stage.CreateClassPrim(rootPath.AppendChild("_class_"+assetName))
+    classPrim = stage.CreateClassPrim(rootPath.AppendChild(f"_class_{assetName}"))
     modelRootPrim.GetInherits().AddInherit(classPrim.GetPath())
-    
+
     if not filesToReference:
         # weird edge case... we're done
         return stage
@@ -131,7 +131,7 @@ def CreateModelStage(assetName,
             modelRootPrim.GetPayloads().AddPayload(Sdf.Payload(variantFile))
     # Now put the variantSet into the state we want it to be in by default
     varSet.SetVariantSelection(defaultVariantSelection)
-    
+
     return stage
 
 if __name__ == "__main__":
@@ -161,18 +161,18 @@ if __name__ == "__main__":
         "'variantFile1'")
 
     args = parser.parse_args()
-    
+
     if not args.assetName or args.assetName == '':
         parser.error("No assetName specified")
-    
-    stage = CreateModelStage(args.assetName,
-                             assetIdentifier=args.identifier,
-                             kind=args.kind,
-                             filesToReference=args.variantFiles,
-                             variantSetName=args.variantSet,
-                             defaultVariantSelection=args.defaultVariantSelection)
-    
-    if stage:
+
+    if stage := CreateModelStage(
+        args.assetName,
+        assetIdentifier=args.identifier,
+        kind=args.kind,
+        filesToReference=args.variantFiles,
+        variantSetName=args.variantSet,
+        defaultVariantSelection=args.defaultVariantSelection,
+    ):
         stage.GetRootLayer().Save()
         exit(0)
     else:

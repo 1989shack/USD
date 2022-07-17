@@ -771,9 +771,7 @@ class TestSdfCopyUtils(unittest.TestCase):
         attrSpecB.default = 2.0
 
         def shouldCopyChildren(*args):
-            if args[0] == "properties":
-                return False
-            return True
+            return args[0] != "properties"
 
         self.assertTrue(
             Sdf.CopySpec(l, "/Root", l, "/Copy3",
@@ -782,13 +780,11 @@ class TestSdfCopyUtils(unittest.TestCase):
 
         dstPrimSpec = l.GetPrimAtPath("/Copy3")
         self.assertEqual(list(dstPrimSpec.properties), [])
-        
+
         # Set up a children callback that copies the property named "A"
         # to a property named "C" under the destination spec.
         def shouldCopyChildren(*args):
-            if args[0] == "properties":
-                return (True, ["A"], ["C"])
-            return True
+            return (True, ["A"], ["C"]) if args[0] == "properties" else True
 
         self.assertTrue(
             Sdf.CopySpec(l, "/Root", l, "/Copy4",

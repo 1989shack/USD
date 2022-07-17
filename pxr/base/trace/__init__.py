@@ -50,23 +50,19 @@ def TraceFunction(obj):
     global collector."""
     
     collector = Collector()
-    
+
     def decorate(func):
         import inspect
 
         if inspect.ismethod(func):
             callableTypeLabel = 'method'
-            classLabel = func.__self__.__class__.__name__+'.'
+            classLabel = f'{func.__self__.__class__.__name__}.'
         else:
             callableTypeLabel = 'func'
             classLabel = ''
 
         module = inspect.getmodule(func)
-        if module is not None:
-            moduleLabel = module.__name__+'.'
-        else:
-            moduleLabel = ''
-
+        moduleLabel = f'{module.__name__}.' if module is not None else ''
         label = 'Python {0}: {1}{2}{3}'.format(
             callableTypeLabel,
             moduleLabel,

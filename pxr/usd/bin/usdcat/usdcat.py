@@ -126,8 +126,7 @@ def main():
                  % (parser.prog, args.out))
             return 1
         if len(args.inputFiles) != 1:
-            _Err("%s: error: must supply exactly one input file with -o/--out" %
-                 parser.prog)
+            _Err(f"{parser.prog}: error: must supply exactly one input file with -o/--out")
             return 1
         ext = os.path.splitext(args.out)[1][1:]
         if args.usdFormat:
@@ -135,14 +134,12 @@ def main():
                 _Err("%s: error: use of --usdFormat requires output file end "
                      "with '.usd' extension" % parser.prog)
                 return 1
-            formatArgsDict.update(dict(format=args.usdFormat))
+            formatArgsDict |= dict(format=args.usdFormat)
         from pxr import Sdf
         if Sdf.FileFormat.FindByExtension(ext) is None:
             _Err("%s: error: unknown output file extension '.%s'"
                  % (parser.prog, ext))
             return 1
-    # If --out was not specified, then --usdFormat must be unspecified or must
-    # be 'usda'.
     elif args.usdFormat and args.usdFormat != 'usda':
         _Err("%s: error: can only write 'usda' format to stdout; specify an "
              "output file with -o/--out to write other formats" % parser.prog)
@@ -152,7 +149,7 @@ def main():
     if args.populationMask:
         if not args.flatten:
             # You can only mask a stage, not a layer.
-            _Err("%s: error: --mask requires --flatten" % parser.prog)
+            _Err(f"{parser.prog}: error: --mask requires --flatten")
             return 1
         args.populationMask = args.populationMask.replace(',', ' ').split()
 
@@ -193,7 +190,7 @@ def main():
         except Exception as e:
             if args.loadOnly:
                 _Msg("{:3} {}".format("ERR", inputFile))
-                _Msg("{}".format(e))
+                _Msg(f"{e}")
             else:
                 _Err("Failed to open '%s' - %s" % (inputFile, e))
             exitCode = 1
@@ -218,14 +215,18 @@ def main():
                 # after the above error report because os.rename() can
                 # fail and we don't want to lose the above error.
                 if os.path.isfile(args.out):
-                    newName = args.out + '.quarantine'
+                    newName = f'{args.out}.quarantine'
                     try:
                         os.rename(args.out, newName)
-                        _Err("Possibly corrupt output file renamed to %s" %
-                            (newName, ))
+                        _Err(f"Possibly corrupt output file renamed to {newName}")
                     except Exception as e:
-                        _Err("Failed to rename possibly corrupt output " +
-                             "file from %s to %s" % (args.out, newName))
+                        _Err(
+                            (
+                                "Failed to rename possibly corrupt output "
+                                + f"file from {args.out} to {newName}"
+                            )
+                        )
+
                 exitCode = 1
         else:
             try:

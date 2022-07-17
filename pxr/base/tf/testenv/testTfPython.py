@@ -45,7 +45,7 @@ def f3(arg1, arg2):
     print('args', arg1, arg2)
 
 def f4(stringArg):
-    return 'got string ' + stringArg
+    return f'got string {stringArg}'
 
 class MyBase(Tf._TestBase):
     def __init__(self):
@@ -264,9 +264,9 @@ class TestPython(unittest.TestCase):
         self.assertTrue(Tf._Enum.Two == 2)
         self.assertTrue(Tf._Alpha == 3)
 
-        self.assertTrue(1 == Tf._Enum.One)
-        self.assertTrue(2 == Tf._Enum.Two)
-        self.assertTrue(3 == Tf._Alpha)
+        self.assertTrue(Tf._Enum.One == 1)
+        self.assertTrue(Tf._Enum.Two == 2)
+        self.assertTrue(Tf._Alpha == 3)
 
         self.assertTrue(Tf._Alpha | Tf._Alpha is Tf._Alpha)
         self.assertTrue(Tf._Alpha & Tf._Alpha is Tf._Alpha)

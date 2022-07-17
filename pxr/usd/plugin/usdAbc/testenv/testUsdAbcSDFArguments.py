@@ -66,7 +66,7 @@ class TestUsdAbcSDFArguments(unittest.TestCase):
 
         pCubeShape1ST = pCubeShape1.GetPrimvar('st')
         pCubeShape2ST = pCubeShape2.GetPrimvar('st')
-        
+
         self.assertEqual(pCubeShape1ST.GetTypeName(), 'texCoord2f[]')
         self.assertEqual(pCubeShape2ST.GetTypeName(), 'texCoord2f[]')
 

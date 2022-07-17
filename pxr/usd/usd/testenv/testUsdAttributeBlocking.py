@@ -76,14 +76,14 @@ if __name__ == '__main__':
     formats = [".usda", ".usdc"]
 
     for fmt in formats:
-        stage, defAttr, sampleAttr = CreateTestAssets('test' + fmt)
+        stage, defAttr, sampleAttr = CreateTestAssets(f'test{fmt}')
         TestBlock(sampleAttr, defAttr)
         del stage, defAttr, sampleAttr
 
-        stage, defAttr, sampleAttr = CreateTestAssets('test' + fmt)
+        stage, defAttr, sampleAttr = CreateTestAssets(f'test{fmt}')
         TestIndividualTimeSampleBlocking(sampleAttr, defAttr)
         del stage, defAttr, sampleAttr
 
-        stage, defAttr, sampleAttr = CreateTestAssets('test' + fmt)
+        stage, defAttr, sampleAttr = CreateTestAssets(f'test{fmt}')
         TestDefaultValueBlocking(sampleAttr, defAttr)
         del stage, defAttr, sampleAttr

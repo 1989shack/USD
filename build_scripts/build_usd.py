@@ -99,21 +99,16 @@ def GetLocale():
 
 def GetCommandOutput(command):
     """Executes the specified command and returns output or None."""
-    try:
+    with contextlib.suppress(subprocess.CalledProcessError):
         return subprocess.check_output(
             shlex.split(command), 
             stderr=subprocess.STDOUT).decode(GetLocale(), 'replace').strip()
-    except subprocess.CalledProcessError:
-        pass
     return None
 
 def GetXcodeDeveloperDirectory():
     """Returns the active developer directory as reported by 'xcode-select -p'.
     Returns None if none is set."""
-    if not MacOS():
-        return None
-
-    return GetCommandOutput("xcode-select -p")
+    return GetCommandOutput("xcode-select -p") if MacOS() else None
 
 def GetVisualStudioCompilerAndVersion():
     """Returns a tuple containing the path to the Visual Studio compiler
@@ -122,14 +117,10 @@ def GetVisualStudioCompilerAndVersion():
     if not Windows():
         return None
 
-    msvcCompiler = which('cl')
-    if msvcCompiler:
-        # VisualStudioVersion environment variable should be set by the
-        # Visual Studio Command Prompt.
-        match = re.search(
-            r"(\d+)\.(\d+)",
-            os.environ.get("VisualStudioVersion", ""))
-        if match:
+    if msvcCompiler := which('cl'):
+        if match := re.search(
+            r"(\d+)\.(\d+)", os.environ.get("VisualStudioVersion", "")
+        ):
             return (msvcCompiler, tuple(int(v) for v in match.groups()))
     return None
 
@@ -137,8 +128,7 @@ def IsVisualStudioVersionOrGreater(desiredVersion):
     if not Windows():
         return False
 
-    msvcCompilerAndVersion = GetVisualStudioCompilerAndVersion()
-    if msvcCompilerAndVersion:
+    if msvcCompilerAndVersion := GetVisualStudioCompilerAndVersion():
         _, version = msvcCompilerAndVersion
         return version >= desiredVersion
     return False
@@ -200,11 +190,11 @@ def GetPythonInfo(context):
     def _GetPythonLibraryFilename(context):
         if Windows():
             suffix = '_d' if context.buildDebug and context.debugPython else ''
-            return "python" + pythonVersionNoDot + suffix + ".lib"
+            return f"python{pythonVersionNoDot}{suffix}.lib"
         elif Linux():
             return sysconfig.get_config_var("LDLIBRARY")
         elif MacOS():
-            return "libpython" + pythonVersion + ".dylib"
+            return f"libpython{pythonVersion}.dylib"
         else:
             raise RuntimeError("Platform not supported")
 
@@ -220,9 +210,11 @@ def GetPythonInfo(context):
         # are one level up.
         if Windows():
             pythonBaseDir = os.path.dirname(pythonBaseDir)
-        
-        pythonIncludeDir = os.path.join(pythonBaseDir, "include",
-                                        "python" + pythonVersion)
+
+        pythonIncludeDir = os.path.join(
+            pythonBaseDir, "include", f"python{pythonVersion}"
+        )
+
         pythonLibPath = os.path.join(pythonBaseDir, "lib",
                                      _GetPythonLibraryFilename(context))
     else:
@@ -269,8 +261,7 @@ def Run(cmd, logCommandOutput = True):
             p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, 
                                  stderr=subprocess.STDOUT)
             while True:
-                l = p.stdout.readline().decode(GetLocale(), 'replace')
-                if l:
+                if l := p.stdout.readline().decode(GetLocale(), 'replace'):
                     logfile.write(l)
                     PrintCommandOutput(l)
                 elif p.poll() is not None:
@@ -331,8 +322,8 @@ def AppendCXX11ABIArg(buildFlag, context, buildArgs):
     if context.useCXX11ABI is None:
         return
 
-    cxxFlags = ["-D_GLIBCXX_USE_CXX11_ABI={}".format(context.useCXX11ABI)]
-    
+    cxxFlags = [f"-D_GLIBCXX_USE_CXX11_ABI={context.useCXX11ABI}"]
+
     # buildArgs might look like:
     # ["-DFOO=1", "-DBAR=2", ...] or ["-DFOO=1 -DBAR=2 ...", ...]
     #
@@ -393,17 +384,13 @@ def RunCMake(context, force, extraArgs = None):
         generator = '-G "{gen}"'.format(gen=generator)
 
     if IsVisualStudio2019OrGreater():
-        generator = generator + " -A x64"
+        generator = f"{generator} -A x64"
 
     toolset = context.cmakeToolset
     if toolset is not None:
         toolset = '-T "{toolset}"'.format(toolset=toolset)
 
-    # On MacOS, enable the use of @rpath for relocatable builds.
-    osx_rpath = None
-    if MacOS():
-        osx_rpath = "-DCMAKE_MACOSX_RPATH=ON"
-
+    osx_rpath = "-DCMAKE_MACOSX_RPATH=ON" if MacOS() else None
     # We use -DCMAKE_BUILD_TYPE for single-configuration generators 
     # (Ninja, make), and --config for multi-configuration generators 
     # (Visual Studio); technically we don't need BOTH at the same
@@ -477,9 +464,13 @@ def PatchFile(filename, patches, multiLineMatches=False):
     for (oldString, newString) in patches:
         newLines = [s.replace(oldString, newString) for s in newLines]
     if newLines != oldLines:
-        PrintInfo("Patching file {filename} (original in {oldFilename})..."
-                  .format(filename=filename, oldFilename=filename + ".old"))
-        shutil.copy(filename, filename + ".old")
+        PrintInfo(
+            "Patching file {filename} (original in {oldFilename})...".format(
+                filename=filename, oldFilename=f"{filename}.old"
+            )
+        )
+
+        shutil.copy(filename, f"{filename}.old")
         open(filename, 'w').writelines(newLines)
 
 def DownloadFileWithCurl(url, outputFilename):
@@ -517,7 +508,7 @@ def DownloadURL(url, context, force, extractDir = None,
     been extracted."""
     with CurrentWorkingDirectory(context.srcDir):
         # Extract filename from URL and see if file already exists. 
-        filename = url.split("/")[-1]       
+        filename = url.split("/")[-1]
         if force and os.path.exists(filename):
             os.remove(filename)
 
@@ -537,7 +528,7 @@ def DownloadURL(url, context, force, extractDir = None,
             # Download to a temporary file and rename it to the expected
             # filename when complete. This ensures that incomplete downloads
             # will be retried if the script is run again.
-            tmpFilename = filename + ".tmp"
+            tmpFilename = f"{filename}.tmp"
             if os.path.exists(tmpFilename):
                 os.remove(tmpFilename)
 
@@ -576,20 +567,14 @@ def DownloadURL(url, context, force, extractDir = None,
         try:
             if tarfile.is_tarfile(filename):
                 archive = tarfile.open(filename)
-                if extractDir:
-                    rootDir = extractDir
-                else:
-                    rootDir = archive.getnames()[0].split('/')[0]
+                rootDir = extractDir or archive.getnames()[0].split('/')[0]
                 if dontExtract != None:
                     members = (m for m in archive.getmembers() 
                                if not any((fnmatch.fnmatch(m.name, p)
                                            for p in dontExtract)))
             elif zipfile.is_zipfile(filename):
                 archive = zipfile.ZipFile(filename)
-                if extractDir:
-                    rootDir = extractDir
-                else:
-                    rootDir = archive.namelist()[0].split('/')[0]
+                rootDir = extractDir or archive.namelist()[0].split('/')[0]
                 if dontExtract != None:
                     members = (m for m in archive.getnames() 
                                if not any((fnmatch.fnmatch(m, p)
@@ -627,15 +612,15 @@ def DownloadURL(url, context, force, extractDir = None,
             # If extraction failed for whatever reason, assume the
             # archive file was bad and move it aside so that re-running
             # the script will try downloading and extracting again.
-            shutil.move(filename, filename + ".bad")
+            shutil.move(filename, f"{filename}.bad")
             raise RuntimeError("Failed to extract archive {filename}: {err}"
                                .format(filename=filename, err=e))
 
 ############################################################
 # 3rd-Party Dependencies
 
-AllDependencies = list()
-AllDependenciesByName = dict()
+AllDependencies = []
+AllDependenciesByName = {}
 
 class Dependency(object):
     def __init__(self, name, installer, *files):
@@ -647,8 +632,10 @@ class Dependency(object):
         AllDependenciesByName.setdefault(name.lower(), self)
 
     def Exists(self, context):
-        return all([os.path.isfile(os.path.join(context.instDir, f))
-                    for f in self.filesToCheck])
+        return all(
+            os.path.isfile(os.path.join(context.instDir, f))
+            for f in self.filesToCheck
+        )
 
 class PythonDependency(object):
     def __init__(self, name, getInstructions, moduleNames):
@@ -668,7 +655,7 @@ class PythonDependency(object):
         return False
 
 def AnyPythonDependencies(deps):
-    return any([type(d) is PythonDependency for d in deps])
+    return any(type(d) is PythonDependency for d in deps)
 
 ############################################################
 # zlib
@@ -680,7 +667,7 @@ def InstallZlib(context, force, buildArgs):
         RunCMake(context, force, buildArgs)
 
 ZLIB = Dependency("zlib", InstallZlib, "include/zlib.h")
-        
+
 ############################################################
 # boost
 
@@ -718,7 +705,7 @@ def InstallBoost_Helper(context, force, buildArgs):
     ]
 
     with CurrentWorkingDirectory(DownloadURL(BOOST_URL, context, force, 
-                                             dontExtract=dontExtract)):
+                                                 dontExtract=dontExtract)):
         bootstrap = "bootstrap.bat" if Windows() else "./bootstrap.sh"
         Run('{bootstrap} --prefix="{instDir}"'
             .format(bootstrap=bootstrap, instDir=context.instDir))
@@ -779,25 +766,9 @@ def InstallBoost_Helper(context, force, buildArgs):
             b2_settings.append("--with-date_time")
 
         if context.buildOIIO or context.enableOpenVDB:
-            b2_settings.append("--with-system")
-            b2_settings.append("--with-thread")
-
+            b2_settings.extend(("--with-system", "--with-thread"))
         if context.enableOpenVDB:
-            b2_settings.append("--with-iostreams")
-
-            # b2 with -sNO_COMPRESSION=1 fails with the following error message:
-            #     error: at [...]/boost_1_61_0/tools/build/src/kernel/modules.jam:107
-            #     error: Unable to find file or target named
-            #     error:     '/zlib//zlib'
-            #     error: referred to from project at
-            #     error:     'libs/iostreams/build'
-            #     error: could not resolve project reference '/zlib'
-
-            # But to avoid an extra library dependency, we can still explicitly
-            # exclude the bzip2 compression from boost_iostreams (note that
-            # OpenVDB uses blosc compression).
-            b2_settings.append("-sNO_BZIP2=1")
-
+            b2_settings.extend(("--with-iostreams", "-sNO_BZIP2=1"))
         if context.buildOIIO:
             b2_settings.append("--with-filesystem")
 
@@ -876,13 +847,14 @@ def InstallTBB(context, force, buildArgs):
 def InstallTBB_Windows(context, force, buildArgs):
     TBB_ROOT_DIR_NAME = "tbb2018_20180822oss"
     with CurrentWorkingDirectory(DownloadURL(TBB_URL, context, force, 
-        TBB_ROOT_DIR_NAME)):
+            TBB_ROOT_DIR_NAME)):
         # On Windows, we simply copy headers and pre-built DLLs to
         # the appropriate location.
         if buildArgs:
-            PrintWarning("Ignoring build arguments {}, TBB is "
-                         "not built from source on this platform."
-                         .format(buildArgs))
+            PrintWarning(
+                f"Ignoring build arguments {buildArgs}, TBB is not built from source on this platform."
+            )
+
 
         CopyFiles(context, "bin\\intel64\\vc14\\*.*", "bin")
         CopyFiles(context, "lib\\intel64\\vc14\\*.*", "lib")
@@ -971,10 +943,7 @@ def InstallTIFF(context, force, buildArgs):
         # functionality is only for compilers using GNU ld on 
         # ELF systems or systems which provide an emulation; therefore
         # skipping it completely on mac and windows.
-        if MacOS() or Windows():
-            extraArgs = ["-Dld-version-script=OFF"]
-        else:
-            extraArgs = []
+        extraArgs = ["-Dld-version-script=OFF"] if MacOS() or Windows() else []
         extraArgs += buildArgs
         RunCMake(context, force, extraArgs)
 
@@ -998,10 +967,18 @@ OPENEXR_URL = "https://github.com/AcademySoftwareFoundation/openexr/archive/v2.3
 
 def InstallOpenEXR(context, force, buildArgs):
     with CurrentWorkingDirectory(DownloadURL(OPENEXR_URL, context, force)):
-        RunCMake(context, force, 
-                 ['-DOPENEXR_BUILD_PYTHON_LIBS=OFF',
-                  '-DOPENEXR_PACKAGE_PREFIX="{}"'.format(context.instDir),
-                  '-DOPENEXR_ENABLE_TESTS=OFF'] + buildArgs)
+        RunCMake(
+            context,
+            force,
+            (
+                [
+                    '-DOPENEXR_BUILD_PYTHON_LIBS=OFF',
+                    f'-DOPENEXR_PACKAGE_PREFIX="{context.instDir}"',
+                    '-DOPENEXR_ENABLE_TESTS=OFF',
+                ]
+                + buildArgs
+            ),
+        )
 
 OPENEXR = Dependency("OpenEXR", InstallOpenEXR, "include/OpenEXR/ImfVersion.h")
 
@@ -1079,21 +1056,14 @@ def InstallOpenVDB(context, force, buildArgs):
         extraArgs = [
             '-DOPENVDB_BUILD_PYTHON_MODULE=OFF',
             '-DOPENVDB_BUILD_BINARIES=OFF',
-            '-DOPENVDB_BUILD_UNITTESTS=OFF'
+            '-DOPENVDB_BUILD_UNITTESTS=OFF',
+            '-DBoost_NO_BOOST_CMAKE=On',
+            '-DBoost_NO_SYSTEM_PATHS=True',
+            '-DBLOSC_ROOT="{instDir}"'.format(instDir=context.instDir),
+            '-DTBB_ROOT="{instDir}"'.format(instDir=context.instDir),
+            '-DILMBASE_ROOT="{instDir}"'.format(instDir=context.instDir),
         ]
 
-        # Make sure to use boost installed by the build script and not any
-        # system installed boost
-        extraArgs.append('-DBoost_NO_BOOST_CMAKE=On')
-        extraArgs.append('-DBoost_NO_SYSTEM_PATHS=True')
-
-        extraArgs.append('-DBLOSC_ROOT="{instDir}"'
-                         .format(instDir=context.instDir))
-        extraArgs.append('-DTBB_ROOT="{instDir}"'
-                         .format(instDir=context.instDir))
-        # OpenVDB needs Half type from IlmBase
-        extraArgs.append('-DILMBASE_ROOT="{instDir}"'
-                         .format(instDir=context.instDir))
 
         # Add on any user-specified extra arguments.
         extraArgs += buildArgs
@@ -1114,20 +1084,14 @@ def InstallOpenImageIO(context, force, buildArgs):
         # idiff to compare the output images from their tests
         buildOIIOTools = 'ON' if (context.buildUsdImaging
                                   and context.buildTests) else 'OFF'
-        extraArgs = ['-DOIIO_BUILD_TOOLS={}'.format(buildOIIOTools),
-                     '-DOIIO_BUILD_TESTS=OFF',
-                     '-DUSE_PYTHON=OFF',
-                     '-DSTOP_ON_WARNING=OFF']
+        extraArgs = [
+            f'-DOIIO_BUILD_TOOLS={buildOIIOTools}',
+            '-DOIIO_BUILD_TESTS=OFF',
+            '-DUSE_PYTHON=OFF',
+            '-DSTOP_ON_WARNING=OFF',
+            '-DOPENEXR_ROOT="{instDir}"'.format(instDir=context.instDir),
+        ]
 
-        # OIIO's FindOpenEXR module circumvents CMake's normal library 
-        # search order, which causes versions of OpenEXR installed in
-        # /usr/local or other hard-coded locations in the module to
-        # take precedence over the version we've built, which would 
-        # normally be picked up when we specify CMAKE_PREFIX_PATH. 
-        # This may lead to undefined symbol errors at build or runtime. 
-        # So, we explicitly specify the OpenEXR we want to use here.
-        extraArgs.append('-DOPENEXR_ROOT="{instDir}"'
-                         .format(instDir=context.instDir))
 
         # If Ptex support is disabled in USD, disable support in OpenImageIO
         # as well. This ensures OIIO doesn't accidentally pick up a Ptex
@@ -1135,11 +1099,7 @@ def InstallOpenImageIO(context, force, buildArgs):
         if not context.enablePtex:
             extraArgs.append('-DUSE_PTEX=OFF')
 
-        # Make sure to use boost installed by the build script and not any
-        # system installed boost
-        extraArgs.append('-DBoost_NO_BOOST_CMAKE=On')
-        extraArgs.append('-DBoost_NO_SYSTEM_PATHS=True')
-
+        extraArgs.extend(('-DBoost_NO_BOOST_CMAKE=On', '-DBoost_NO_SYSTEM_PATHS=True'))
         # Add on any user-specified extra arguments.
         extraArgs += buildArgs
 
@@ -1180,14 +1140,7 @@ def InstallOpenColorIO(context, force, buildArgs):
         #   in https://github.com/AcademySoftwareFoundation/OpenColorIO/commit/0be465feb9ac2d34bd8171f30909b276c1efa996
         #
         # To avoid build failures we force all warnings off for this build.
-        if GetVisualStudioCompilerAndVersion():
-            # This doesn't work because CMake stores default flags for
-            # MSVC in CMAKE_CXX_FLAGS and this would overwrite them.
-            # However, we don't seem to get any warnings on Windows
-            # (at least with VS2015 and 2017).
-            # extraArgs.append('-DCMAKE_CXX_FLAGS=/w') 
-            pass
-        else:
+        if not GetVisualStudioCompilerAndVersion():
             extraArgs.append('-DCMAKE_CXX_FLAGS=-w')
 
         # Add on any user-specified extra arguments.
@@ -1331,7 +1284,7 @@ def InstallAlembic(context, force, buildArgs):
                 '-DCMAKE_CXX_FLAGS="-D H5_BUILT_AS_DYNAMIC_LIB"']
         else:
            cmakeOptions += ['-DUSE_HDF5=OFF']
-                 
+
         cmakeOptions += buildArgs
 
         RunCMake(context, force, cmakeOptions)
@@ -1405,10 +1358,12 @@ EMBREE = Dependency("Embree", InstallEmbree, "include/embree3/rtcore.h")
 
 def InstallUSD(context, force, buildArgs):
     with CurrentWorkingDirectory(context.usdSrcDir):
-        extraArgs = []
+        extraArgs = [
+            '-DPXR_PREFER_SAFETY_OVER_SPEED=' + 'ON'
+            if context.safetyFirst
+            else 'OFF'
+        ]
 
-        extraArgs.append('-DPXR_PREFER_SAFETY_OVER_SPEED=' + 
-                         'ON' if context.safetyFirst else 'OFF')
 
         if context.buildPython:
             extraArgs.append('-DPXR_ENABLE_PYTHON_SUPPORT=ON')
@@ -1426,18 +1381,7 @@ def InstallUSD(context, force, buildArgs):
             else:
                 extraArgs.append('-DPXR_USE_DEBUG_PYTHON=OFF')
 
-            # CMake has trouble finding the executable, library, and include
-            # directories when there are multiple versions of Python installed.
-            # This can lead to crashes due to USD being linked against one
-            # version of Python but running through some other Python
-            # interpreter version. This primarily shows up on macOS, as it's
-            # common to have a Python install that's separate from the one
-            # included with the system.
-            #
-            # To avoid this, we try to determine these paths from Python
-            # itself rather than rely on CMake's heuristics.
-            pythonInfo = GetPythonInfo(context)
-            if pythonInfo:
+            if pythonInfo := GetPythonInfo(context):
                 # According to FindPythonLibs.cmake these are the variables
                 # to set to specify which Python installation to use.
                 extraArgs.append('-DPYTHON_EXECUTABLE="{pyExecPath}"'
@@ -1463,7 +1407,7 @@ def InstallUSD(context, force, buildArgs):
             extraArgs.append('-DPXR_BUILD_DOCUMENTATION=ON')
         else:
             extraArgs.append('-DPXR_BUILD_DOCUMENTATION=OFF')
-    
+
         if context.buildTests:
             extraArgs.append('-DPXR_BUILD_TESTS=ON')
         else:
@@ -1483,7 +1427,7 @@ def InstallUSD(context, force, buildArgs):
             extraArgs.append('-DPXR_BUILD_USD_TOOLS=ON')
         else:
             extraArgs.append('-DPXR_BUILD_USD_TOOLS=OFF')
-            
+
         if context.buildImaging:
             extraArgs.append('-DPXR_BUILD_IMAGING=ON')
             if context.enablePtex:
@@ -1508,12 +1452,12 @@ def InstallUSD(context, force, buildArgs):
                 extraArgs.append('-DPXR_BUILD_PRMAN_PLUGIN=ON')
             else:
                 extraArgs.append('-DPXR_BUILD_PRMAN_PLUGIN=OFF')                
-            
+
             if context.buildOIIO:
                 extraArgs.append('-DPXR_BUILD_OPENIMAGEIO_PLUGIN=ON')
             else:
                 extraArgs.append('-DPXR_BUILD_OPENIMAGEIO_PLUGIN=OFF')
-                
+
             if context.buildOCIO:
                 extraArgs.append('-DPXR_BUILD_OPENCOLORIO_PLUGIN=ON')
             else:
@@ -1535,12 +1479,15 @@ def InstallUSD(context, force, buildArgs):
         if context.buildAlembic:
             extraArgs.append('-DPXR_BUILD_ALEMBIC_PLUGIN=ON')
             if context.enableHDF5:
-                extraArgs.append('-DPXR_ENABLE_HDF5_SUPPORT=ON')
+                extraArgs.extend(
+                    (
+                        '-DPXR_ENABLE_HDF5_SUPPORT=ON',
+                        '-DHDF5_ROOT="{instDir}"'.format(
+                            instDir=context.instDir
+                        ),
+                    )
+                )
 
-                # CMAKE_PREFIX_PATH isn't sufficient for the FindHDF5 module 
-                # to find the HDF5 we've built, so provide an extra hint.
-                extraArgs.append('-DHDF5_ROOT="{instDir}"'
-                                 .format(instDir=context.instDir))
             else:
                 extraArgs.append('-DPXR_ENABLE_HDF5_SUPPORT=OFF')
         else:
@@ -1548,9 +1495,8 @@ def InstallUSD(context, force, buildArgs):
 
         if context.buildDraco:
             extraArgs.append('-DPXR_BUILD_DRACO_PLUGIN=ON')
-            draco_root = (context.dracoLocation
-                          if context.dracoLocation else context.instDir)
-            extraArgs.append('-DDRACO_ROOT="{}"'.format(draco_root))
+            draco_root = context.dracoLocation or context.instDir
+            extraArgs.append(f'-DDRACO_ROOT="{draco_root}"')
         else:
             extraArgs.append('-DPXR_BUILD_DRACO_PLUGIN=OFF')
 
@@ -1563,10 +1509,7 @@ def InstallUSD(context, force, buildArgs):
             # Increase the precompiled header buffer limit.
             extraArgs.append('-DCMAKE_CXX_FLAGS="/Zm150"')
 
-        # Make sure to use boost installed by the build script and not any
-        # system installed boost
-        extraArgs.append('-DBoost_NO_BOOST_CMAKE=On')
-        extraArgs.append('-DBoost_NO_SYSTEM_PATHS=True')
+        extraArgs.extend(('-DBoost_NO_BOOST_CMAKE=On', '-DBoost_NO_SYSTEM_PATHS=True'))
         extraArgs += buildArgs
 
         RunCMake(context, force, extraArgs)
@@ -1648,7 +1591,7 @@ parser.add_argument("install_dir", type=str,
                     help="Directory where USD will be installed")
 parser.add_argument("-n", "--dry_run", dest="dry_run", action="store_true",
                     help="Only summarize what would happen")
-                    
+
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-v", "--verbose", action="count", default=1,
                    dest="verbosity",
@@ -1669,10 +1612,13 @@ group.add_argument("--build", type=str,
 BUILD_DEBUG = "debug"
 BUILD_RELEASE = "release"
 BUILD_RELWITHDEBUG = "relwithdebuginfo"
-group.add_argument("--build-variant", default=BUILD_RELEASE,
-                   choices=[BUILD_DEBUG, BUILD_RELEASE, BUILD_RELWITHDEBUG],
-                   help=("Build variant for USD and 3rd-party dependencies. "
-                         "(default: {})".format(BUILD_RELEASE)))
+group.add_argument(
+    "--build-variant",
+    default=BUILD_RELEASE,
+    choices=[BUILD_DEBUG, BUILD_RELEASE, BUILD_RELWITHDEBUG],
+    help=f"Build variant for USD and 3rd-party dependencies. (default: {BUILD_RELEASE})",
+)
+
 
 group.add_argument("--build-args", type=str, nargs="*", default=[],
                    help=("Custom arguments to pass to build system when "

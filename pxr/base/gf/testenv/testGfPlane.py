@@ -30,7 +30,7 @@ import math
 from pxr import Gf, Tf
 
 def err( msg ):
-    return "ERROR: " + msg + " failed"
+    return f"ERROR: {msg} failed"
 
 class TestGfPlane(unittest.TestCase):
 
@@ -76,8 +76,8 @@ class TestGfPlane(unittest.TestCase):
         p1 = Gf.Plane(Gf.Vec3d(1,1,1), 10)
         p2 = Gf.Plane(Gf.Vec3d(1,1,1), 20)
         self.assertEqual(p1, Gf.Plane(Gf.Vec3d(1,1,1), 10), err("equality"))
-        self.assertTrue(not p1 == p2, err("equality"))
-        self.assertTrue(not p1 != Gf.Plane(Gf.Vec3d(1,1,1), 10), err("inequality"))
+        self.assertTrue(p1 != p2, err("equality"))
+        self.assertTrue(p1 == Gf.Plane(Gf.Vec3d(1,1,1), 10), err("inequality"))
         self.assertTrue(p1 != p2, err("inequality"))
 
     def test_Methods(self):

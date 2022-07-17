@@ -27,9 +27,13 @@ from pxr import Usd, UsdGeom
 
 # section 1
 stage = Usd.Stage.Open("RefExample.usda")
-assert([x for x in stage.Traverse()] == [stage.GetPrimAtPath("/refSphere"), 
-    stage.GetPrimAtPath("/refSphere/world"), stage.GetPrimAtPath("/refSphere2"), 
-    stage.GetPrimAtPath("/refSphere2/world")])
+assert list(stage.Traverse()) == [
+    stage.GetPrimAtPath("/refSphere"),
+    stage.GetPrimAtPath("/refSphere/world"),
+    stage.GetPrimAtPath("/refSphere2"),
+    stage.GetPrimAtPath("/refSphere2/world"),
+]
+
 
 # section 2
 assert([x for x in stage.Traverse() if UsdGeom.Sphere(x)] == 
@@ -38,7 +42,7 @@ assert([x for x in stage.Traverse() if UsdGeom.Sphere(x)] ==
 
 # section 3
 treeIter = iter(Usd.PrimRange.PreAndPostVisit(stage.GetPseudoRoot()))
-    
+
 treeIterExpectedResults = [(stage.GetPrimAtPath("/"), False),
         (stage.GetPrimAtPath("/refSphere"), False),
         (stage.GetPrimAtPath("/refSphere/world"), False),
@@ -59,5 +63,7 @@ ref2Prim = stage.GetPrimAtPath('/refSphere2')
 stage.SetEditTarget(stage.GetSessionLayer())
 Usd.Prim.SetActive(ref2Prim, False)
 
-assert ([x for x in stage.Traverse()] == [stage.GetPrimAtPath("/refSphere"), 
-    stage.GetPrimAtPath("/refSphere/world")])
+assert list(stage.Traverse()) == [
+    stage.GetPrimAtPath("/refSphere"),
+    stage.GetPrimAtPath("/refSphere/world"),
+]

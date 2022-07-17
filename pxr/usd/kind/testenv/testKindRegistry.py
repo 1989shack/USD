@@ -28,7 +28,7 @@ import os, unittest, shutil
 class TestKindRegistry(unittest.TestCase):
     def test_Basic(self):
         # Register python module plugins
-        Plug.Registry().RegisterPlugins(os.getcwd() + "/**/")
+        Plug.Registry().RegisterPlugins(f"{os.getcwd()}/**/")
 
         reg = Kind.Registry()
         self.assertTrue(reg)

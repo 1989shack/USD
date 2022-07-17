@@ -69,15 +69,15 @@ def main():
     _CreateAsset(asset, outputDir, options.kind, options.shadingVariantLayer)
 
 def _CreateAsset(assetName, assetDir, assetKind, addShadingVariantLayer):
-    assetFilePath = os.path.join(assetDir, '%s.usd' % assetName)
+    assetFilePath = os.path.join(assetDir, f'{assetName}.usd')
 
-    print("Creating asset at %s" % assetFilePath)
+    print(f"Creating asset at {assetFilePath}")
     # Make the layer ascii - good for readability, plus the file is small
     rootLayer = Sdf.Layer.CreateNew(assetFilePath, args = {'format':'usda'})
     assetStage = Usd.Stage.Open(rootLayer)
 
     # Define a prim for the asset and make it the default for the stage.
-    assetPrim = UsdGeom.Xform.Define(assetStage, '/%s' % assetName).GetPrim()
+    assetPrim = UsdGeom.Xform.Define(assetStage, f'/{assetName}').GetPrim()
     assetStage.SetDefaultPrim(assetPrim)
     # Lets viewing applications know how to orient a free camera properly
     UsdGeom.SetStageUpAxis(assetStage, UsdGeom.Tokens.y)
@@ -88,17 +88,17 @@ def _CreateAsset(assetName, assetDir, assetKind, addShadingVariantLayer):
     model = Usd.ModelAPI(assetPrim)
     if assetKind:
         model.SetKind(assetKind)
-    
+
     model.SetAssetName(assetName)
-    model.SetAssetIdentifier('%s/%s.usd' % (assetName, assetName))
-    
+    model.SetAssetIdentifier(f'{assetName}/{assetName}.usd')
+
     refs = []
     if addShadingVariantLayer:
         # if we're going to add it, then shading is stronger than geom and needs
         # to be added first
-        refs.append('./%s.shadingVariants.usda' % assetName)
+        refs.append(f'./{assetName}.shadingVariants.usda')
 
-    refs.append('./%s.maya.usd' % assetName)
+    refs.append(f'./{assetName}.maya.usd')
 
     _CreateAndReferenceLayers(assetPrim, assetDir, refs)
 

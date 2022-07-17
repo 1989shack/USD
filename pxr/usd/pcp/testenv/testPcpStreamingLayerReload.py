@@ -31,8 +31,8 @@ class TestPcpStreamingLayerReload(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         testRoot = os.path.join(os.path.dirname(__file__), 'PcpPlugins')
-        testPluginsDso = testRoot + '/lib'
-        testPluginsDsoSearch = testPluginsDso + '/*/Resources/'
+        testPluginsDso = f'{testRoot}/lib'
+        testPluginsDsoSearch = f'{testPluginsDso}/*/Resources/'
 
         # Register dso plugins.  Discard possible exception due to
         # TestPlugDsoEmpty.  The exception only shows up here if it happens in

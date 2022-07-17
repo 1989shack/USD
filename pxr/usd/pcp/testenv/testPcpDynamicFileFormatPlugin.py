@@ -31,8 +31,8 @@ class TestPcpDynamicFileFormatPlugin(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         testRoot = os.path.join(os.path.dirname(__file__), 'PcpPlugins')
-        testPluginsDso = testRoot + '/lib'
-        testPluginsDsoSearch = testPluginsDso + '/*/Resources/'
+        testPluginsDso = f'{testRoot}/lib'
+        testPluginsDsoSearch = f'{testPluginsDso}/*/Resources/'
 
         # Register dso plugins.  Discard possible exception due to TestPlugDsoEmpty.
         # The exception only shows up here if it happens in the main thread so we
@@ -162,7 +162,7 @@ class TestPcpDynamicFileFormatPlugin(unittest.TestCase):
 
     def _VerifyFoundDynamicPayloads(self, cache, payloads):
         for payload in payloads:
-            print ("Finding prim index for " + payload)
+            print(f"Finding prim index for {payload}")
             # Verify each dynamic payload's prim index is computed 
             # without errors and has dynamic file arguments
             primIndex = cache.FindPrimIndex(payload)
@@ -174,16 +174,19 @@ class TestPcpDynamicFileFormatPlugin(unittest.TestCase):
 
             # Verify that there is a geom spec under each payload and that
             # these do not have dynamic file arguments.
-            geomIndex = cache.FindPrimIndex(payload + "/geom")
+            geomIndex = cache.FindPrimIndex(f"{payload}/geom")
             self.assertTrue(geomIndex.IsValid())
             # The geom reference prim index will not have dynamic file format
             # dependency data.
             self.assertTrue(
-                cache.GetDynamicFileFormatArgumentDependencyData(payload + "/geom").IsEmpty())
+                cache.GetDynamicFileFormatArgumentDependencyData(
+                    f"{payload}/geom"
+                ).IsEmpty()
+            )
 
     def _VerifyNotFoundDynamicPayloads(self, cache, payloads):
         for payload in payloads:
-            print ("Finding prim index for " + payload)
+            print(f"Finding prim index for {payload}")
             # Verify each dynamic payload's prim index is computed 
             # without errors and has dynamic file arguments
             primIndex = cache.FindPrimIndex(payload)
@@ -193,13 +196,13 @@ class TestPcpDynamicFileFormatPlugin(unittest.TestCase):
 
             # Verify that there is a geom spec under each payload and that
             # these do not have dynamic file arguments.
-            geomIndex = cache.FindPrimIndex(payload + "/geom")
+            geomIndex = cache.FindPrimIndex(f"{payload}/geom")
             self.assertIsNone(geomIndex)
 
     def _VerifyComputeDynamicPayloads(self, cache, payloads, hasPayloadId=False):
 
         for payload in payloads:
-            print ("Computing prim index for " + payload)
+            print(f"Computing prim index for {payload}")
             # Verify each dynamic payload's prim index is computed 
             # without errors and has dynamic file arguments
             (primIndex, err) = cache.ComputePrimIndex(payload)
@@ -220,13 +223,16 @@ class TestPcpDynamicFileFormatPlugin(unittest.TestCase):
 
             # Verify that there is a geom spec under each payload and that
             # these do not have dynamic file arguments.
-            (geomIndex, err) = cache.ComputePrimIndex(payload + "/geom")
+            (geomIndex, err) = cache.ComputePrimIndex(f"{payload}/geom")
             self.assertTrue(geomIndex.IsValid())
             self.assertFalse(err)
             # The geom reference prim index will not have dynamic file format
             # dependency data.
             self.assertTrue(
-                cache.GetDynamicFileFormatArgumentDependencyData(payload + "/geom").IsEmpty())
+                cache.GetDynamicFileFormatArgumentDependencyData(
+                    f"{payload}/geom"
+                ).IsEmpty()
+            )
 
     def _TestChangeInfo(self, cache, prim, field, newValue, expectedSignificantChanges):
         # Test that authoring a new value for an relevant field like 
@@ -234,8 +240,13 @@ class TestPcpDynamicFileFormatPlugin(unittest.TestCase):
         for expected in expectedSignificantChanges:
             dep = cache.GetDynamicFileFormatArgumentDependencyData(expected)
             oldValue = prim.GetInfo(field) if prim.HasInfo(field) else None
-            self.assertTrue(dep.CanFieldChangeAffectFileFormatArguments(
-                field, oldValue, newValue), msg=("Field %s: %s -> %s" % (field, oldValue, newValue)))
+            self.assertTrue(
+                dep.CanFieldChangeAffectFileFormatArguments(
+                    field, oldValue, newValue
+                ),
+                msg=f"Field {field}: {oldValue} -> {newValue}",
+            )
+
 
         with Pcp._TestChangeProcessor(cache) as cp:
             prim.SetInfo(field, newValue)
@@ -252,11 +263,11 @@ class TestPcpDynamicFileFormatPlugin(unittest.TestCase):
         rootLayer = Sdf.Layer.FindOrOpen(rootLayerFile)
         self.assertTrue(rootLayer)
         cache = self._CreatePcpCache(rootLayer)
-                                        
+
         # Payloads for /RootCone - depth = 4, num = 3 : produces 40 payloads                                        
         payloads = self._GeneratePrimIndexPaths("/RootCone", 4, 3, 40)
         cache.RequestPayloads(payloads,[])
-                                                                                                        
+
         # Compute prim indices for each of the dynamic payloads and verify
         # they were generated correctly.                                                                                                        
         self._VerifyComputeDynamicPayloads(cache, payloads)

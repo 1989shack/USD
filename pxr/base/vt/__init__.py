@@ -42,8 +42,7 @@ def _CopyArrayFromBufferFuncs(moduleContents):
 
     for funcName, func in funcs.items():
         className = funcName[:-len('FromBuffer')]
-        cls = classes.get(className)
-        if cls:
+        if cls := classes.get(className):
             setattr(cls, 'FromBuffer', staticmethod(func))
             setattr(cls, 'FromNumpy', staticmethod(func))
 

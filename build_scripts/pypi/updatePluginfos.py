@@ -60,11 +60,10 @@ def process_plugin_dict(plugin_dict, libname, newname):
             # strip off a pxr/ at the front of the newname
             plugin_dict['LibraryPath'] = os.path.join('../../', newname[4:])
             return True
-    else:
-        if f'libs/{libname}-' in newname:
-            # found a new location for this lib
-            plugin_dict['LibraryPath'] = os.path.join('../../../', newname)
-            return True
+    elif f'libs/{libname}-' in newname:
+        # found a new location for this lib
+        plugin_dict['LibraryPath'] = os.path.join('../../../', newname)
+        return True
     return False
 
 
@@ -88,10 +87,7 @@ def update_pluginfo(contents, new_lib_names, new_pluginfo_hashes):
                 if changed:
                     break
 
-    if changed:
-        return json.dumps(json_doc, indent=4).encode('utf-8')
-
-    return contents
+    return json.dumps(json_doc, indent=4).encode('utf-8') if changed else contents
 
 
 def update_record(contents, new_pluginfo_hashes):
@@ -124,10 +120,10 @@ def main():
     input_file, output_file = parse_command_line()
 
     if not os.path.exists(input_file):
-        raise RuntimeError("no such file " + input_file)
+        raise RuntimeError(f"no such file {input_file}")
 
     # Loop over the file once to update pluginfos and compute new hash values
-    temp_file_name = input_file + '_old_hashes'
+    temp_file_name = f'{input_file}_old_hashes'
     new_pluginfo_hashes = {}
     with zipfile.ZipFile(input_file, 'r') as input_wheel:
         with zipfile.ZipFile(temp_file_name, 'w', 

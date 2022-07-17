@@ -30,7 +30,7 @@ import math
 from pxr import Gf
 
 def err( msg ):
-    return "ERROR: " + msg + " failed"
+    return f"ERROR: {msg} failed"
 
 class TestGfLineSeg(unittest.TestCase):
     

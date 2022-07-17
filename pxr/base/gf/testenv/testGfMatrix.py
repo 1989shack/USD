@@ -39,10 +39,9 @@ except ImportError:
 def makeValue( Value, vals ):
     if Value == float:
         return Value(vals[0])
-    else:
-        v = Value()
-        for i in range(v.dimension):
-            v[i] = vals[i]
+    v = Value()
+    for i in range(v.dimension):
+        v[i] = vals[i]
     return v
 
 class TestGfMatrix(unittest.TestCase):
@@ -174,13 +173,19 @@ class TestGfMatrix(unittest.TestCase):
             self.assertEqual(m[-1], makeValue(Vec, (3,1,4,1)))
 
             m = Matrix()
-            m[0,0] = 1; m[1,0] = 2; m[0,1] = 3; m[1,1] = 4
+            m[0,0] = 1
+            m[1,0] = 2
+            m[0,1] = 3
+            m[1,1] = 4
             self.assertTrue(m[0,0] == 1 and m[1,0] == 2 and m[0,1] == 3 and m[1,1] == 4)
-            
+
             m = Matrix()
-            m[-1,-1] = 1; m[-2,-1] = 2; m[-1,-2] = 3; m[-2,-2] = 4
+            m[-1,-1] = 1
+            m[-2,-1] = 2
+            m[-1,-2] = 3
+            m[-2,-2] = 4
             self.assertTrue(m[-1,-1] == 1 and m[-2,-1] == 2 and m[-1,-2] == 3 and m[-2,-2] == 4)
-            
+
             m = Matrix()
             for i in range(m.dimension[0]):
                 for j in range(m.dimension[1]):
@@ -197,7 +202,7 @@ class TestGfMatrix(unittest.TestCase):
             self.assertEqual(Matrix(3).GetDeterminant(), 3 ** Matrix.dimension[0])
 
             self.assertEqual(len(Matrix()), Matrix.dimension[0])
-            
+
             # Test GetRow, GetRow3, GetColumn
             m = Matrix(1)
             for i in range(m.dimension[0]):
@@ -235,7 +240,7 @@ class TestGfMatrix(unittest.TestCase):
                 v = makeValue(Vec, tuple(j+x*m.dimension[0] for x in range(m.dimension[0])) )
                 m.SetColumn(i, v)
                 self.assertEqual(v, m.GetColumn(i))
-                    
+
             m = Matrix(4)
             m_original = m
             m *= Matrix(1./4)
@@ -280,7 +285,7 @@ class TestGfMatrix(unittest.TestCase):
                 self.assertEqual(Matrix(2) * makeValue(Vecf, (3,1,4,1)), makeValue(Vecf, (6,2,8,2)))
                 self.assertEqual(makeValue(Vecf, (3,1,4,1)) * Matrix(2), makeValue(Vecf, (6,2,8,2)))
 
-            self.assertTrue(2 in Matrix(2) and not 4 in Matrix(2))
+            self.assertTrue(2 in Matrix(2) and 4 not in Matrix(2))
 
             m = Matrix(1)
             try:
@@ -795,7 +800,7 @@ class TestGfMatrix(unittest.TestCase):
             AssertDeterminant(m2, det2)
             AssertDeterminant(m3, det3)
             AssertDeterminant(m4, det4)
-            AssertDeterminant(m1 * m1, det1 * det1)
+            AssertDeterminant(m1 * m1, det1**2)
             AssertDeterminant(m1 * m4, det1 * det4)
             AssertDeterminant(m1 * m3 * m4, det1 * det3 * det4)
             AssertDeterminant(m1 * m3 * m4 * m2, det1 * det3 * det4 * det2)

@@ -33,10 +33,9 @@ from pxr import Gf, Tf
 def makeValue( Value, vals ):
     if Value == float:
         return Value(vals[0])
-    else:
-        v = Value()
-        for i in range(v.dimension):
-            v[i] = vals[i]
+    v = Value()
+    for i in range(v.dimension):
+        v[i] = vals[i]
     return v
 
 class TestGfRange(unittest.TestCase):

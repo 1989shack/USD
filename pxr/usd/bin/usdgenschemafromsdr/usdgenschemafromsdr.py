@@ -77,17 +77,12 @@ def _GetUsdGenSchemaCmd():
     from distutils.spawn import find_executable
     import platform
 
-    cmd = find_executable(MiscConstants.USD_GEN_SCHEMA)
-    
-    # usdGenSchema is found in PATH
-    if cmd:
+    if cmd := find_executable(MiscConstants.USD_GEN_SCHEMA):
         return cmd
-    else:
-        # try to find usdGenSchema from installed directory of this script
-        cmd = find_executable(USD_GEN_SCHEMA, 
-                path=os.path.abspath(os.path.dirname(sys.argv[0])))
-        if cmd:
-            return cmd
+    if cmd := find_executable(
+        USD_GEN_SCHEMA, path=os.path.abspath(os.path.dirname(sys.argv[0]))
+    ):
+        return cmd
 
     if (platform.system() == 'Windows'):
         # find_executable under Windows only returns *.EXE files
@@ -114,12 +109,16 @@ def _ConfigureSchemaLayer(schemaLayer, schemaSubLayers, skipCodeGeneration,
     globalPrim = schemaLayer.GetPrimAtPath(
             SchemaLayerConstants.GLOBAL_PRIM_PATH)
     if not globalPrim:
-        Tf.RaiseRuntimeError("Missing %s prim in schema.usda." \
-                %(SchemaLayerConstants.GLOBAL_PRIM_PATH))
+        Tf.RaiseRuntimeError(
+            f"Missing {SchemaLayerConstants.GLOBAL_PRIM_PATH} prim in schema.usda."
+        )
+
 
     if not globalPrim.customData:
-        Tf.RaiseRuntimeError("customData must be defined on the %s prim" \
-                %(SchemaLayerConstants.GLOBAL_PRIM_PATH))
+        Tf.RaiseRuntimeError(
+            f"customData must be defined on the {SchemaLayerConstants.GLOBAL_PRIM_PATH} prim"
+        )
+
 
     customDataDict = dict(globalPrim.customData)
     if SchemaLayerConstants.LIBRARY_NAME_STRING not in customDataDict:
@@ -130,7 +129,7 @@ def _ConfigureSchemaLayer(schemaLayer, schemaSubLayers, skipCodeGeneration,
             skipCodeGeneration
     customDataDict[SchemaLayerConstants.USE_LITERAL_IDENTIFIER] = \
             useLiteralIdentifier
-            
+
     globalPrim.customData = customDataDict
 
     schemaLayer.Save()
@@ -242,15 +241,14 @@ if __name__ == '__main__':
     validate = args.validate
 
     if not os.path.isfile(schemaConfig):
-        Tf.RaiseRuntimeError("(%s) json config does not exist" %(schemaConfig))
+        Tf.RaiseRuntimeError(f"({schemaConfig}) json config does not exist")
 
     # Parse json config to extract sdrNodes and schema sublayers
     try:
         with open(schemaConfig) as json_file:
             config = json.load(json_file)
     except ValueError as ve:
-        Tf.RaiseRuntimeError("Error loading (%s), value error: (%s)" \
-                %(schemaConfig, ve))
+        Tf.RaiseRuntimeError(f"Error loading ({schemaConfig}), value error: ({ve})")
 
     if not isinstance(config, dict):
         Tf.Warn("Invalid json config provided, expecting a dictionary")
@@ -263,8 +261,7 @@ if __name__ == '__main__':
     sdrNodesToParse = []
     renderContext = ""
 
-    sdrNodesDict = config.get(SchemaConfigConstants.SDR_NODES)
-    if sdrNodesDict:
+    if sdrNodesDict := config.get(SchemaConfigConstants.SDR_NODES):
         # Extract any renderContext from the config if specified.
         if SchemaConfigConstants.RENDER_CONTEXT in sdrNodesDict.keys():
             renderContext = \
@@ -277,15 +274,14 @@ if __name__ == '__main__':
                 continue
             if sourceType == SchemaConfigConstants.SOURCE_ASSET_NODES:
                 # process sdrNodes provided by explicit sourceAssetNodes
-                for assetPath in \
-                    sdrNodesDict.get(SchemaConfigConstants.SOURCE_ASSET_NODES):
+                for assetPath in sdrNodesDict.get(SchemaConfigConstants.SOURCE_ASSET_NODES):
                     node = Sdr.Registry().GetShaderNodeFromAsset(assetPath)
                     nodeIdentifier = \
                         os.path.splitext(os.path.basename(assetPath))[0]
                     if node:
                         sdrNodesToParse.append((node, nodeIdentifier))
                     else:
-                        Tf.Warn("Node not found at path: %s." %(assetPath))
+                        Tf.Warn(f"Node not found at path: {assetPath}.")
                 continue
             for nodeId in sdrNodesDict.get(sourceType):
                 node = sdrRegistry.GetShaderNodeByIdentifierAndType(nodeId,
@@ -298,8 +294,7 @@ if __name__ == '__main__':
                     # Refer: pxr/usd/ndr/node.h#140-149
                     sdrNodesToParse.append(node)
                 else:
-                    Tf.Warn("Invalid Node (%s:%s) provided." %(sourceType,
-                        nodeId))
+                    Tf.Warn(f"Invalid Node ({sourceType}:{nodeId}) provided.")
     else:
         Tf.Warn("No sdr nodes provided to generate a schema.usda")
         sys.exit(1)
@@ -314,8 +309,7 @@ if __name__ == '__main__':
             SchemaLayerConstants.SCHEMA_PATH_STRING)
     schemaLayer = Sdf.Layer.FindOrOpen(schemaLayerPath)
     if not schemaLayer:
-        Tf.RaiseRuntimeError("Missing schema.usda at path (%s)." \
-                %(schemaLayerPath))
+        Tf.RaiseRuntimeError(f"Missing schema.usda at path ({schemaLayerPath}).")
 
     # set skipCodeGeneration  customData to true, unless explicitly marked
     # False in the config file

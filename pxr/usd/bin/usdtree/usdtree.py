@@ -125,64 +125,58 @@ class SdfAccessor(object):
 
 def GetPrimLabel(acc, prim):
     spec = acc.GetSpecifier(prim).displayName.lower()
-    typeName = acc.GetTypeName(prim)
-    if typeName:
-        definition = '{} {}'.format(spec, typeName)
+    if typeName := acc.GetTypeName(prim):
+        definition = f'{spec} {typeName}'
     else:
         definition = spec
-    label = '{} [{}]'.format(acc.GetName(prim), definition)
+    label = f'{acc.GetName(prim)} [{definition}]'
 
     shortMetadata = []
-    
+
     if not acc.IsActive(prim):
         shortMetadata.append('active = false')
     elif acc.HasAuthoredActive(prim):
         shortMetadata.append('active = true')
-    
-    kind = acc.GetKind(prim)
-    if kind:
-        shortMetadata.append('kind = {}'.format(kind))
-    
+
+    if kind := acc.GetKind(prim):
+        shortMetadata.append(f'kind = {kind}')
+
     if shortMetadata:
-        label += ' ({})'.format(', '.join(shortMetadata))
+        label += f" ({', '.join(shortMetadata)})"
     return label
 
 
 def PrintPrim(args, acc, prim, prefix, isLast):
     if not isLast:
         lastStep = ' |--'
-        if acc.GetChildren(prim):
-            attrStep = ' |   |'
-        else:
-            attrStep = ' |    '
+        attrStep = ' |   |' if acc.GetChildren(prim) else ' |    '
     else:
         lastStep = ' `--'
-        if acc.GetChildren(prim):
-            attrStep = '     |'
-        else:
-            attrStep = '      '
-    
-    if args.simple:
-        label = acc.GetName(prim)
-    else:
-        label = GetPrimLabel(acc, prim)
-
-    _Msg('{}{}{}'.format(prefix, lastStep, label))
+        attrStep = '     |' if acc.GetChildren(prim) else '      '
+    label = acc.GetName(prim) if args.simple else GetPrimLabel(acc, prim)
+    _Msg(f'{prefix}{lastStep}{label}')
 
     attrs = []
     if args.metadata:
-        attrs.extend('({})'.format(md) for md in sorted(acc.GetMetadata(prim))
-                                           if md not in METADATA_KEYS_TO_SKIP)
-    
+        attrs.extend(
+            f'({md})'
+            for md in sorted(acc.GetMetadata(prim))
+            if md not in METADATA_KEYS_TO_SKIP
+        )
+
+
     if args.attributes:
-        attrs.extend('.{}'.format(acc.GetPropertyName(prop)) for prop in acc.GetProperties(prim))
-    
+        attrs.extend(
+            f'.{acc.GetPropertyName(prop)}' for prop in acc.GetProperties(prim)
+        )
+
+
     numAttrs = len(attrs)
     for i, attr in enumerate(attrs):
         if i < numAttrs - 1:
-            _Msg('{}{} :--{}'.format(prefix, attrStep, attr))
+            _Msg(f'{prefix}{attrStep} :--{attr}')
         else:
-            _Msg('{}{} `--{}'.format(prefix, attrStep, attr))
+            _Msg(f'{prefix}{attrStep} `--{attr}')
 
 
 def PrintChildren(args, acc, prim, prefix):
@@ -191,10 +185,10 @@ def PrintChildren(args, acc, prim, prefix):
     for i, child in enumerate(children):
         if i < numChildren - 1:
             PrintPrim(args, acc, child, prefix, isLast=False)
-            PrintChildren(args, acc, child, prefix + ' |  ')
+            PrintChildren(args, acc, child, f'{prefix} |  ')
         else:
             PrintPrim(args, acc, child, prefix, isLast=True)
-            PrintChildren(args, acc, child, prefix + '    ')
+            PrintChildren(args, acc, child, f'{prefix}    ')
 
 
 def PrintStage(args, stage):
@@ -214,15 +208,16 @@ def PrintTree(args, path):
             for mask in args.populationMask:
                 popMask.Add(mask)
         if popMask:
-            if args.unloaded:
-                stage = Usd.Stage.OpenMasked(path, popMask, Usd.Stage.LoadNone)
-            else:
-                stage = Usd.Stage.OpenMasked(path, popMask)
+            stage = (
+                Usd.Stage.OpenMasked(path, popMask, Usd.Stage.LoadNone)
+                if args.unloaded
+                else Usd.Stage.OpenMasked(path, popMask)
+            )
+
+        elif args.unloaded:
+            stage = Usd.Stage.Open(path, Usd.Stage.LoadNone)
         else:
-            if args.unloaded:
-                stage = Usd.Stage.Open(path, Usd.Stage.LoadNone)
-            else:
-                stage = Usd.Stage.Open(path)
+            stage = Usd.Stage.Open(path)
         PrintStage(args, stage)
     elif args.flattenLayerStack:
         from pxr import UsdUtils
@@ -275,12 +270,12 @@ Special metadata "kind" and "active" are always shown if authored unless --simpl
                         'commas and/or spaces.  Requires --flatten.')
 
     args = parser.parse_args()
-    
+
     # split args.populationMask into paths.
     if args.populationMask:
         if not args.flatten:
             # You can only mask a stage, not a layer.
-            _Err("%s: error: --mask requires --flatten" % parser.prog)
+            _Err(f"{parser.prog}: error: --mask requires --flatten")
             return 1
         args.populationMask = args.populationMask.replace(',', ' ').split()
 

@@ -29,7 +29,7 @@ import unittest, sys
 class TestPcpPathTranslation(unittest.TestCase):
     def _GetPcpCacheForLayer(self, rootLayerPath):
         rootLayer = Sdf.Layer.FindOrOpen(rootLayerPath)
-        self.assertTrue(rootLayer, "Cannot open layer %s" % (rootLayerPath))
+        self.assertTrue(rootLayer, f"Cannot open layer {rootLayerPath}")
 
         return Pcp.Cache(Pcp.LayerStackIdentifier(rootLayer))
 
@@ -112,7 +112,7 @@ class TestPcpPathTranslation(unittest.TestCase):
                    "/World/Chars/Ref2.localChildRel" : "RefChild",
                    "/World/Chars/Ref2/RefChild.localSelfRel" : ".",
                    "/World/Chars/Ref2/RefChild.localParentRel" : "..",
-                   
+
                    "/World/Ref3.localSelfRel" : ".",
                    "/World/Ref3.localParentRel" : "..",
                    "/World/Ref3.localChildRel" : "RefChild",
@@ -198,7 +198,7 @@ class TestPcpPathTranslation(unittest.TestCase):
 
             self.assertEqual(curTargetPaths, 
                         [Sdf.Path(expectedTargetPath).MakeAbsolutePath(relPath.GetPrimPath())])
-            
+
         self.assertEqual(len(errors), 0)
 
     def test_ReferenceErrorCases(self):
@@ -221,7 +221,7 @@ class TestPcpPathTranslation(unittest.TestCase):
                  "/World/Ref3.refBadRel",
                  "/World/Ref3/RefChild.refBadAbs",
                  "/World/Ref3/RefChild.refBadRel"]
-        
+
         for path in paths:
             (targetPaths, _, curErrors) = \
                 pcpCache.ComputeRelationshipTargetPaths(path)
@@ -229,8 +229,11 @@ class TestPcpPathTranslation(unittest.TestCase):
 
         for err in errors:
             print(err, file=sys.stderr)
-            self.assertTrue(isinstance(err, Pcp.ErrorInvalidExternalTargetPath), 
-                   "Unexpected Error: %s" % err)
+            self.assertTrue(
+                isinstance(err, Pcp.ErrorInvalidExternalTargetPath),
+                f"Unexpected Error: {err}",
+            )
+
 
         self.assertEqual(len(errors), len(paths))
 

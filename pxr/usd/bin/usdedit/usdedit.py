@@ -32,14 +32,13 @@ isWindows = (platform.system() == 'Windows')
 
 def _findExe(name):
     from distutils.spawn import find_executable
-    cmd = find_executable(name)
-    if cmd:
+    if cmd := find_executable(name):
         return cmd
-    else:
-        cmd = find_executable(name, path=os.path.abspath(os.path.dirname(sys.argv[0])))
-        if cmd:
-            return cmd
-    
+    if cmd := find_executable(
+        name, path=os.path.abspath(os.path.dirname(sys.argv[0]))
+    ):
+        return cmd
+
     if isWindows:
         # find_executable under Windows only returns *.EXE files
         # so we need to traverse PATH.
@@ -68,7 +67,7 @@ def _findEditorTools(usdFileName, readOnly):
                  _findExe("emacs") or
                  _findExe("vim") or
                  _findExe("notepad"))
-    
+
     if not editorCmd:
         sys.exit("Error: Couldn't find a suitable text editor to use. Expected " 
                  "$USD_EDITOR or $EDITOR to be set, or emacs/vim/notepad to "
@@ -78,7 +77,7 @@ def _findEditorTools(usdFileName, readOnly):
     if 'emacs' in editorCmd:
         title = '"usdedit %s%s"' % ("--noeffect " if readOnly else "",
                                     usdFileName)
-        editorCmd += " -name %s" % title
+        editorCmd += f" -name {title}"
 
     return (usdcatCmd, editorCmd)
 
@@ -87,23 +86,23 @@ def _generateTemporaryFile(usdcatCmd, usdFileName, readOnly, prefix):
     # gets the base name of the USD file opened
     usdFileNameBasename = os.path.splitext(os.path.basename(usdFileName))[0]
 
-    fullPrefix = prefix or usdFileNameBasename + "_tmp"
+    fullPrefix = prefix or f"{usdFileNameBasename}_tmp"
     import tempfile
     (usdaFile, usdaFileName) = tempfile.mkstemp(
         prefix=fullPrefix, suffix='.usda', dir=os.getcwd())
 
     # No need for an open file descriptor, as it locks the file in Windows.
     os.close(usdaFile)
- 
-    os.system(usdcatCmd + ' ' + usdFileName + '> ' + usdaFileName)
+
+    os.system(f'{usdcatCmd} {usdFileName}> {usdaFileName}')
 
     if readOnly:
         os.chmod(usdaFileName, 0o444)
-     
+
     # Thrown if failed to open temp file Could be caused by 
     # failure to read USD file
     if os.stat(usdaFileName).st_size == 0:
-        sys.exit("Error: Failed to open file %s, exiting." % usdFileName)
+        sys.exit(f"Error: Failed to open file {usdFileName}, exiting.")
 
     return usdaFileName
 
@@ -112,9 +111,9 @@ def _generateTemporaryFile(usdcatCmd, usdFileName, readOnly, prefix):
 def _editTemporaryFile(editorCmd, usdaFileName):
     # check the timestamp before updating a file's mtime
     initialTimeStamp = os.path.getmtime(usdaFileName)
-    os.system(editorCmd + ' ' + usdaFileName)
+    os.system(f'{editorCmd} {usdaFileName}')
     newTimeStamp = os.path.getmtime(usdaFileName)
-    
+
     # indicate whether the file was changed
     return initialTimeStamp != newTimeStamp
 
@@ -174,7 +173,7 @@ def main():
         results.forceWrite,
         results.usdFileName,
         results.prefix)
-    
+
     # verify our usd file exists, and permissions args are sane
     if readOnly and forceWrite:
         sys.exit("Error: Cannot set read only(-n) and force " 
@@ -183,7 +182,7 @@ def main():
     from pxr import Ar
     resolvedPath = Ar.GetResolver().Resolve(usdFileName)
     if not resolvedPath:
-        sys.exit("Error: Cannot find file %s" % usdFileName)
+        sys.exit(f"Error: Cannot find file {usdFileName}")
 
     # Layers in packages cannot be written using the Sdf API.
     from pxr import Ar, Sdf
@@ -193,7 +192,7 @@ def main():
     fileFormat = Sdf.FileFormat.FindByExtension(extension)
     if not fileFormat:
         sys.exit("Error: Unknown file format")
-        
+
     if fileFormat.IsPackage():
         print("Warning: Edits cannot be saved to layers in %s files. "
               "Starting in no-effect mode." % extension)
@@ -207,21 +206,23 @@ def main():
 
     # ensure we have both a text editor and usdcat available
     usdcatCmd, editorCmd = _findEditorTools(usdFileName, readOnly)
-    
+
     # generate our temporary file with proper permissions and edit.
     usdaFileName = _generateTemporaryFile(usdcatCmd, usdFileName,
                                           readOnly, prefix)
     tempFileChanged = _editTemporaryFile(editorCmd, usdaFileName)
-    
 
-    if (not readOnly or forceWrite) and tempFileChanged:
-        # note that we need not overwrite usdFileName's write permissions
-        # because we will be creating a new layer at that path.
-        if not _writeOutChanges(temporaryFileName=usdaFileName, 
-                                permanentFileName=usdFileName):
-            sys.exit("Error: Unable to save edits back to the original file %s"
-                     ". Your edits can be found in %s. " \
-                     %(usdFileName, usdaFileName))
+
+    if (
+        (not readOnly or forceWrite)
+        and tempFileChanged
+        and not _writeOutChanges(
+            temporaryFileName=usdaFileName, permanentFileName=usdFileName
+        )
+    ):
+        sys.exit("Error: Unable to save edits back to the original file %s"
+                 ". Your edits can be found in %s. " \
+                 %(usdFileName, usdaFileName))
 
     if readOnly:
         os.chmod(usdaFileName, 0o644)

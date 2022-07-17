@@ -31,7 +31,7 @@ class TestUsdAbcConversionSubdiv(unittest.TestCase):
         abcFile = 'converted.abc'
 
         time = Usd.TimeCode.EarliestTime()
-        
+
         self.assertTrue(UsdAbc._WriteAlembic(usdFile, abcFile))
 
         origStage = Usd.Stage.Open(usdFile)

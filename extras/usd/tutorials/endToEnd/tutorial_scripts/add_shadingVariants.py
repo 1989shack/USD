@@ -92,7 +92,7 @@ def _AddShadingToBall(stage):
         # write to the shadingVariant.
         with shadingVariant.GetVariantEditContext():
             whichBall = variantName.split('_')[-1]
-            texPath = os.path.join(texDir, 'ball%s.tex' % whichBall)
+            texPath = os.path.join(texDir, f'ball{whichBall}.tex')
             # in the current variant, modify the color
             _SetParameters(ballTexture, [
                 ('filename', Sdf.ValueTypeNames.String, texPath),
@@ -101,8 +101,8 @@ def _AddShadingToBall(stage):
             # set the display color for hydra
             _SetDisplayColor(mesh, color)
 
-            # currently not doing anything with decoration, but we could maybe
-            # use this to make the solid vs. stripes.
+                    # currently not doing anything with decoration, but we could maybe
+                    # use this to make the solid vs. stripes.
 
     # now make the variant selection 'Cue' instead of the last variant that we
     # created above.

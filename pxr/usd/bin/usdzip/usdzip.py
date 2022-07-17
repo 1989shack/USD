@@ -85,13 +85,13 @@ def _CreateUsdzPackage(usdzFile, filesToAdd, recurse, checkCompliance, verbose):
                 filesToAdd += filesInDir
             else:
                 if verbose:
-                    print('.. adding: %s' % f)
+                    print(f'.. adding: {f}')
                 if os.path.getsize(f) > 0:
                     fileList.append(f)
                 else:
                     _Err("Skipping empty file '%s'." % f)
 
-        if checkCompliance and len(fileList) > 0:
+        if checkCompliance and fileList:
             rootLayer = fileList[0]
             if not _CheckCompliance(rootLayer):
                 return False
@@ -220,7 +220,7 @@ def main():
             if os.path.exists(usdzFile):
                 print("File at path '%s' already exists. Overwriting file." % 
                         usdzFile)
-            
+
             if args.inputFiles:
                 print('Creating package \'%s\' with files %s.' % 
                       (usdzFile, inputFiles))
@@ -230,11 +230,10 @@ def main():
 
             if not args.recurse:
                 print('Not recursing into sub-directories.')
-    else:
-        if args.checkCompliance:
-            parser.error("--checkCompliance should only be specified when "
-                "creating a usdz package. Please use 'usdchecker' to check "
-                "compliance of an existing .usdz file.")
+    elif args.checkCompliance:
+        parser.error("--checkCompliance should only be specified when "
+            "creating a usdz package. Please use 'usdchecker' to check "
+            "compliance of an existing .usdz file.")
 
 
     success = True
@@ -268,8 +267,7 @@ def main():
 
     if args.listTarget or args.dumpTarget:
         if os.path.exists(usdzFile):
-            zipFile = Usd.ZipFile.Open(usdzFile)
-            if zipFile:
+            if zipFile := Usd.ZipFile.Open(usdzFile):
                 if args.dumpTarget:
                     if args.dumpTarget == usdzFile:
                         _Err("The file into which to dump the contents of the "

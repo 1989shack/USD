@@ -29,6 +29,7 @@ from pxr import Usd, Sdf, Tf
 
 @contextlib.contextmanager
 def StageChangeListener(stage):
+
     class _Listener(object):
         def __init__(self, stage):
             self._listener = Tf.Notice.Register(
@@ -40,8 +41,7 @@ def StageChangeListener(stage):
             self.resyncedPrimPaths = notice.GetResyncedPaths()
             self.changedInfoPaths = notice.GetChangedInfoOnlyPaths()
 
-    l = _Listener(stage)
-    yield l
+    yield _Listener(stage)
 
 class TestUsdAttributeQuery(unittest.TestCase):
     def test_NoInvalidationForInsignificantChange(self):

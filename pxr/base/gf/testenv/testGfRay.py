@@ -443,7 +443,7 @@ class TestGfRay(unittest.TestCase):
             self.assertTrue(hit)
             self.assertAlmostEqual(enter, -radius, delta=epsilon)
             self.assertAlmostEqual(exit, radius, delta=epsilon)
-            
+
             # Ray behind cone, orthogonal to axis
             distance = x - radius
             ray = Gf.Ray(Gf.Vec3d(-x, 0, 0), Gf.Vec3d().XAxis())
@@ -461,11 +461,11 @@ class TestGfRay(unittest.TestCase):
             # Ray inside cone, along z-axis
             ray = Gf.Ray(origin, Gf.Vec3d().ZAxis())
             (hit, enter, exit) = ray.Intersect(origin, axis, radius, height)
-            
+
             self.assertTrue(hit)
             self.assertAlmostEqual(enter, height, delta=epsilon)
             self.assertAlmostEqual(exit, height, delta=epsilon)
-            
+
             # Ray above cone, along z-axis
             z = height * random.uniform(1 + epsilon, 10)
             ray = Gf.Ray(Gf.Vec3d(0, 0, z), Gf.Vec3d().YAxis())
@@ -476,11 +476,11 @@ class TestGfRay(unittest.TestCase):
             ray = Gf.Ray(Gf.Vec3d(radius / 2.0, 0, 0), Gf.Vec3d().ZAxis())
             distance = height / 2.0
             (hit, enter, exit) = ray.Intersect(origin, axis, radius, height)
-            
+
             self.assertTrue(hit)
             self.assertAlmostEqual(enter, distance, delta=epsilon)
             self.assertAlmostEqual(exit, distance, delta=epsilon)
-            
+
             # Ray on surface, parallel to surface
             ray = Gf.Ray(Gf.Vec3d(radius, 0, 0), Gf.Vec3d(-radius, 0, height))
             (hit, enter, exit) = ray.Intersect(origin, axis, radius, height)

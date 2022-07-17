@@ -103,7 +103,7 @@ if doxygenTagFile is None:
         "the USD build. Some Doxygen links may not appear properly.")
     doxygenTagFile = ""
 else:
-    GetSphinxLogger().info("Using Doxygen tag file: {}".format(doxygenTagFile))
+    GetSphinxLogger().info(f"Using Doxygen tag file: {doxygenTagFile}")
 
 doxygenPrefix = GetDoxygenPrefix()
 if doxygenPrefix is None:
@@ -114,7 +114,7 @@ if doxygenPrefix is None:
         "may not work properly.")
     doxygenPrefix = ""
 else:
-    GetSphinxLogger().info("Using Doxygen prefix: {}".format(doxygenPrefix))
+    GetSphinxLogger().info(f"Using Doxygen prefix: {doxygenPrefix}")
 
 doxylink = {
     'usdcpp' : (doxygenTagFile, doxygenPrefix)

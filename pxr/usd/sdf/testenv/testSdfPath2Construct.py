@@ -243,23 +243,28 @@ class TestSdfPath2Construct(unittest.TestCase):
         for str in goodPaths:
             path = Sdf.Path(str)
             elemTuple = goodPaths[str]
-            self.assertEqual(path.IsAbsolutePath(), elemTuple[0], "Failed on path string %s"%str)
+            self.assertEqual(
+                path.IsAbsolutePath(), elemTuple[0], f"Failed on path string {str}"
+            )
+
             prefixes = Sdf._PathElemsToPrefixes(elemTuple[0], elemTuple[1])
             self.assertEqual(path.GetPrefixes(), prefixes)
             self.assertEqual(path.pathString, str)
             repr = path.__repr__()
             g = { 'Sdf' : Sdf }
-            exec("newPath = %s"%repr, g)
+            exec(f"newPath = {repr}", g)
             self.assertEqual(g['newPath'], path)
 
         repr = Sdf.Path.emptyPath.__repr__()
         g = { 'Sdf' : Sdf }
-        exec("newPath = %s"%repr, g)
+        exec(f"newPath = {repr}", g)
         self.assertEqual(g['newPath'], Sdf.Path.emptyPath)
 
     def test_BadPaths(self):
         for str in badPathStrings:
-            self.assertEqual(Sdf.Path(str), Sdf.Path.emptyPath, "Failed on path str %s"%str)
+            self.assertEqual(
+                Sdf.Path(str), Sdf.Path.emptyPath, f"Failed on path str {str}"
+            )
 
 if __name__ == "__main__":
     unittest.main()
