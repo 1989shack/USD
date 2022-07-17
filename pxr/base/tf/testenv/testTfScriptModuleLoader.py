@@ -54,10 +54,10 @@ sml._LoadModulesForLibrary('')
 # Turn on script module loader debug output.
 Tf.Debug.SetDebugSymbolsByName('TF_SCRIPT_MODULE_LOADER', True)
 
-prefix = Tf.__package__ + '.testenv.testTfScriptModuleLoader_'
+prefix = f'{Tf.__package__}.testenv.testTfScriptModuleLoader_'
 
 def Import(name):
-    exec("import " + prefix + name)
+    exec(f"import {prefix}{name}")
 
 # Declare libraries.
 def Register(libs):

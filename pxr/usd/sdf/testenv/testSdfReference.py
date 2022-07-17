@@ -36,26 +36,22 @@ class TestSdfReferences(unittest.TestCase):
             ['layerOffset', Sdf.LayerOffset(48, -2)],
             ['customData', {'key': 42, 'other': 'yes'}],
         ]
-        
+
         for n in range(1 << len(args)):
-            kw = {}
-            for i in range(len(args)):
-                if (1 << i) & n:
-                    kw[args[i][0]] = args[i][1]
-        
+            kw = {args[i][0]: args[i][1] for i in range(len(args)) if (1 << i) & n}
             ref = Sdf.Reference(**kw)
-            print('  Testing Repr for: ' + repr(ref))
-        
+            print(f'  Testing Repr for: {repr(ref)}')
+
             self.assertEqual(ref, eval(repr(ref)))
             for arg, value in args:
                 if arg in kw:
-                    self.assertEqual(eval('ref.' + arg), value)
+                    self.assertEqual(eval(f'ref.{arg}'), value)
                 else:
-                    self.assertEqual(eval('ref.' + arg), eval('Sdf.Reference().' + arg))
-        
-        
+                    self.assertEqual(eval(f'ref.{arg}'), eval(f'Sdf.Reference().{arg}'))
+                        
+
         print("\nTesting Sdf.Reference immutability.")
-        
+
         # There is no proxy for the Reference yet (we don't have a good
         # way to support nested proxies).  Make sure the user can't modify
         # temporary Reference objects.
@@ -76,7 +72,7 @@ class TestSdfReferences(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             Sdf.Reference().customData = {'refCustomData': {'refFloat': 1.0}}
-        
+
         # Code coverage.
         ref0 = Sdf.Reference(customData={'a': 0})
         ref1 = Sdf.Reference(customData={'a': 0, 'b': 1})

@@ -36,46 +36,37 @@ the given filename.  If given two arguments (a string and a Path), finds
 the menv layer with the given filename and returns the scene object 
 within it at the given path.'''
     layer = Layer.Find(layerFileName)
-    if (scenePath is None): return layer
-    return layer.GetObjectAtPath(scenePath)
+    return layer if (scenePath is None) else layer.GetObjectAtPath(scenePath)
 
 
 # Test utilities
 def _PathElemsToPrefixes(absolute, elements):
-    if absolute:
-        string = "/"
-    else:
-        string = ""
-    
+    string = "/" if absolute else ""
     lastElemWasDotDot = False
     didFirst = False
-    
+
     for elem in elements:
         if elem == Path.parentPathElement:
             # dotdot
             if didFirst:
-                string = string + "/"
+                string = f"{string}/"
             else:
                 didFirst = True
-            string = string + elem
             lastElemWasDotDot = True
         elif elem[0] == ".":
             # property
             if lastElemWasDotDot:
-                string = string + "/"
-            string = string + elem
+                string = f"{string}/"
             lastElemWasDotDot = False
         elif elem[0] == "[":
-            # rel attr or sub-attr indices, don't care which
-            string = string + elem
             lastElemWasDotDot = False
         else:
             if didFirst:
-                string = string + "/"
+                string = f"{string}/"
             else:
                 didFirst = True
-            string = string + elem
             lastElemWasDotDot = False
+        string = string + elem
     if not string:
         return []
     path = Path(string)

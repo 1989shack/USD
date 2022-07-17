@@ -165,13 +165,13 @@ class TestSdfAttribute(unittest.TestCase):
         self.assertEqual(attr.customData['attrCustomData'], {'attrFloat': 1.0})
         attr.ClearInfo('customData')
         self.assertFalse(attr.HasInfo('customData'))
-        self.assertTrue(len(attr.customData) == 0)
+        self.assertTrue(not attr.customData)
         with self.assertRaises(Tf.ErrorException):
             # This dict's Gf.Range1d values are not supported as metadata in
             # scene description.
             attr.customData = { 'foo': { 'bar': Gf.Range1d(1.0, 2.0) },
                                 'bar': Gf.Range1d(1.0, 2.0) }
-        self.assertTrue(len(attr.customData) == 0)
+        self.assertTrue(not attr.customData)
 
         # Setting doc so that we can clear default without expiring.
         attr.documentation = 'some documentation'
@@ -410,17 +410,16 @@ class TestSdfAttribute(unittest.TestCase):
         layer = Sdf.Layer.CreateAnonymous()
         prim = Sdf.PrimSpec(layer, "test", Sdf.SpecifierDef, "bogus_type")
         attr = Sdf.AttributeSpec(prim, 'numCrvs', Sdf.ValueTypeNames.Int)
-        self.assertEqual(attr.path,
-                         Sdf.Path('/' + prim.name + '.' + attr.name))
-        self.assertEqual(prim.GetAttributeAtPath(
-            Sdf.Path('.' + attr.name)), attr)
-        self.assertEqual(prim.GetObjectAtPath(
-            Sdf.Path('.' + attr.name)), attr)
+        self.assertEqual(attr.path, Sdf.Path(f'/{prim.name}.{attr.name}'))
+        self.assertEqual(prim.GetAttributeAtPath(Sdf.Path(f'.{attr.name}')), attr)
+        self.assertEqual(prim.GetObjectAtPath(Sdf.Path(f'.{attr.name}')), attr)
         self.assertEqual(layer.GetAttributeAtPath(attr.path), attr)
         self.assertEqual(layer.GetObjectAtPath(attr.path), attr)
         # Try a bad path... access a relational attribute of an attribute!
-        self.assertEqual(prim.GetAttributeAtPath(
-            Sdf.Path('.' + attr.name + '[targ].attr')), None)
+        self.assertEqual(
+            prim.GetAttributeAtPath(Sdf.Path(f'.{attr.name}[targ].attr')), None
+        )
+
 
         # dormant object path, for code coverage
         del prim.properties[attr.name]

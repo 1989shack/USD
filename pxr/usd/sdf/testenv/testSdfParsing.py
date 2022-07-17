@@ -42,9 +42,7 @@ from pxr import Tf, Sdf
 def _open(*args, **kw):
     if sys.version_info.major >= 3 and platform.system() == "Windows":
         kw['encoding'] = 'utf8'
-        return open(*args, **kw)
-    else:
-        return open(*args, **kw)
+    return open(*args, **kw)
 
 
 def removeFiles(*filenames):
@@ -234,7 +232,9 @@ class TestSdfParsing(unittest.TestCase):
         def CreateTempFile(name):
             import tempfile
             layerFileOut = tempfile.NamedTemporaryFile(
-                suffix='_' + name + '_testSdfParsing1.sdf', delete=False)
+                suffix=f'_{name}_testSdfParsing1.sdf', delete=False
+            )
+
             # Close the temporary file.  We only wanted a temporary file name
             # and we'll open/close/remove this file once per test file.  On
             # Unix this isn't necessary because holding a file open doesn't
@@ -242,7 +242,7 @@ class TestSdfParsing(unittest.TestCase):
             # we don't close our handle.
             layerFileOut.close()
             return layerFileOut
-        
+
         layerFileOut = CreateTempFile('Export')
         layerFileOut2 = CreateTempFile('ExportToString')
         layerFileOut3 = CreateTempFile('MetadataOnly')
@@ -250,7 +250,7 @@ class TestSdfParsing(unittest.TestCase):
         layerDir = os.path.join(os.getcwd(), 'testSdfParsing.testenv')
         baselineDir = os.path.join(layerDir, 'baseline')
 
-        print("LAYERDIR: %s"%layerDir)
+        print(f"LAYERDIR: {layerDir}")
 
         # Register test plugin containing plugin metadata definitions.
         from pxr import Plug
@@ -260,16 +260,16 @@ class TestSdfParsing(unittest.TestCase):
             for file in testFiles:
                 if file.startswith('#') or file == '' or '_bad_' in file:
                     continue
-                
+
                 try:
-                    layerFile = "%s/%s" % (layerDir, file)
-                    exportFile = "%s/%s" % (baselineDir, file)
+                    layerFile = f"{layerDir}/{file}"
+                    exportFile = f"{baselineDir}/{file}"
 
                     layer = Sdf.Layer.FindOrOpen(layerFile)
                     layer.Export(exportFile)
 
                 except:
-                    print('Unable to export layer %s to %s' % (layerFile, exportFile))
+                    print(f'Unable to export layer {layerFile} to {exportFile}')
 
         # Helper code to generate baseline layers. Uncomment to export 'good' layers
         # in the test list to the specified directory.
@@ -286,7 +286,7 @@ class TestSdfParsing(unittest.TestCase):
 
             layerFile = file
             if file != "":
-                layerFile = "%s/%s"%(layerDir, file)
+                layerFile = f"{layerDir}/{file}"
 
             if (file == "") or ('_bad_' in file):
                 print('\nTest bad file "%s"' % layerFile)
@@ -298,16 +298,6 @@ class TestSdfParsing(unittest.TestCase):
                     print('\tErrors encountered, as expected')
                     print('\tPassed')
                     continue
-                except:
-                    # Empty file fails with a different error, and that's ok
-                    if file != "":
-                        print('\tNon-TfError encountered')
-                        print('\tFAILED')
-                        raise RuntimeError("failure to load '%s' should cause Tf.ErrorException, not some other failure" % layerFile)
-                    else:
-                        print('\tErrors encountered, as expected')
-                        print('\tPassed')
-                        continue
                 else:
                     raise RuntimeError("should not be able to load '%s'" % layerFile)
 
@@ -315,13 +305,15 @@ class TestSdfParsing(unittest.TestCase):
 
             print('\tReading...')
             layer = Sdf.Layer.FindOrOpen(layerFile)
-            self.assertTrue(layer is not None,
-                            "failed to open @%s@" % layerFile)
+            self.assertTrue(layer is not None, f"failed to open @{layerFile}@")
 
             metadataOnlyLayer = Sdf.Layer.OpenAsAnonymous(
                 layerFile, metadataOnly=True)
-            self.assertTrue(metadataOnlyLayer is not None,
-                            "failed to open @%s@ for metadata only" % layerFile)
+            self.assertTrue(
+                metadataOnlyLayer is not None,
+                f"failed to open @{layerFile}@ for metadata only",
+            )
+
 
             print('\tWriting...')
             try:
@@ -334,7 +326,7 @@ class TestSdfParsing(unittest.TestCase):
                     f.write(layer.ExportToString())
 
                 self.assertTrue(metadataOnlyLayer.Export(layerFileOut3.name))
-                    
+
             except Exception as e:
                 if '_badwrite_' in file:
                     # Write errors should always be Tf.ErrorExceptions
@@ -350,7 +342,7 @@ class TestSdfParsing(unittest.TestCase):
             # even though the scene description is the same.
             print('\tComparing against expected results...')
 
-            expectedFile = "%s/%s" % (baselineDir, file)
+            expectedFile = f"{baselineDir}/{file}"
 
             def doDiff(testFile, expectedFile, metadataOnly=False):
 
@@ -368,7 +360,7 @@ class TestSdfParsing(unittest.TestCase):
                     try:
                         mdStart = expectedLayerData.index("(\n", 1)
                         mdEnd = expectedLayerData.index(")\n", mdStart)
-                        expectedLayerData = expectedLayerData[0:mdEnd+1]+["\n"]
+                        expectedLayerData = expectedLayerData[:mdEnd+1] + ["\n"]
                     except ValueError:
                         # If there's no layer metadata, we expect to just have
                         # the first line of the baseline with the #sdf cookie.
@@ -387,7 +379,7 @@ class TestSdfParsing(unittest.TestCase):
             doDiff(layerFileOut.name, expectedFile)
             doDiff(layerFileOut2.name, expectedFile)
             doDiff(layerFileOut3.name, expectedFile, metadataOnly=True)
-            
+
             print('\tPassed')
 
         removeFiles(layerFileOut.name, layerFileOut2.name)

@@ -65,18 +65,24 @@ def main():
     _CreateShot(shot, outputDir, options.baseLayer)
 
 def _CreateShot(shotName, shotDir, baseLayer):
-    shotFilePath = os.path.join(shotDir, '%s.usd' % shotName)
+    shotFilePath = os.path.join(shotDir, f'{shotName}.usd')
 
     from pxr import Usd, UsdGeom
     shotStage = Usd.Stage.CreateNew(shotFilePath)
-    print("Creating shot at %s" % shotFilePath)
+    print(f"Creating shot at {shotFilePath}")
 
-    _CreateAndAddSubLayers(shotStage, shotName, shotDir, [
-        './%s_sim.usd' % shotName,
-        './%s_anim.usd' % shotName,
-        './%s_layout.usd' % shotName,
-        './%s_sets.usd' % shotName,
-        ])
+    _CreateAndAddSubLayers(
+        shotStage,
+        shotName,
+        shotDir,
+        [
+            f'./{shotName}_sim.usd',
+            f'./{shotName}_anim.usd',
+            f'./{shotName}_layout.usd',
+            f'./{shotName}_sets.usd',
+        ],
+    )
+
 
     if baseLayer:
         shotStage.GetRootLayer().subLayerPaths.append(baseLayer)

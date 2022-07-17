@@ -32,11 +32,9 @@ testPaths = [
     Sdf.Path('/a/b/c')
     ]
 
-testMapFuncs = []
-
 # Test null function
 null = Pcp.MapFunction()
-testMapFuncs.append(null)
+testMapFuncs = [null]
 assert null.isNull
 assert not null.isIdentity
 assert not null.isIdentityPathMapping
@@ -167,9 +165,7 @@ assert m6.timeOffset == offset2
 assert m5.Compose(m6).timeOffset == (offset1 * offset2)
 assert m5.ComposeOffset(m6.timeOffset).timeOffset == (offset1 * offset2)
 
-testMapFuncs.append(m5)
-testMapFuncs.append(m6)
-
+testMapFuncs.extend((m5, m6))
 # Test composing map functions that should produce identity mappings.
 m1 = Pcp.MapFunction({'/':'/', '/a':'/b'})
 m2 = Pcp.MapFunction({'/':'/', '/b':'/a'})

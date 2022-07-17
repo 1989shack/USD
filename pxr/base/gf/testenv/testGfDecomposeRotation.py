@@ -57,11 +57,8 @@ def ComposeRotation(rotOrder, rotVals):
     swMat = Gf.Matrix3d(swRot)
     return Gf.Matrix4d(twMat * fbMat * lrMat * swMat, Gf.Vec3d(0))
 
-def IsMatrixClose (x, y, epsilon=1e-6):
-    for i in range(4):
-        if not Gf.IsClose(x.GetRow(i), y.GetRow(i), epsilon):
-            return False
-    return True
+def IsMatrixClose(x, y, epsilon=1e-6):
+    return all(Gf.IsClose(x.GetRow(i), y.GetRow(i), epsilon) for i in range(4))
 
 class TestGfDecomposeRotation(unittest.TestCase):
     
@@ -88,14 +85,14 @@ class TestGfDecomposeRotation(unittest.TestCase):
                                useHint = False, 
                                expectedResult = None):
         self.log.info("_TestDecomposeRotation")
-        self.log.info("    rot = " + str(rot))
-        self.log.info("    rotOrder = " + str(rotOrder))
-        self.log.info("    thetaTwHint = " + str(thetaTwHint))
-        self.log.info("    thetaFBHint = " + str(thetaFBHint))
-        self.log.info("    thetaLRHint = " + str(thetaLRHint))
-        self.log.info("    thetaSwHint = " + str(thetaSwHint))
-        self.log.info("    useHint = " + str(useHint))
-        self.log.info("    expectedResult = " + str(expectedResult))
+        self.log.info(f"    rot = {str(rot)}")
+        self.log.info(f"    rotOrder = {str(rotOrder)}")
+        self.log.info(f"    thetaTwHint = {str(thetaTwHint)}")
+        self.log.info(f"    thetaFBHint = {str(thetaFBHint)}")
+        self.log.info(f"    thetaLRHint = {str(thetaLRHint)}")
+        self.log.info(f"    thetaSwHint = {str(thetaSwHint)}")
+        self.log.info(f"    useHint = {str(useHint)}")
+        self.log.info(f"    expectedResult = {str(expectedResult)}")
         self.log.info("")
 
         # Do a special test for the passed in rotation order if expectedResult
@@ -757,31 +754,35 @@ class TestClosestEulerRotation(unittest.TestCase):
     _TEST_RANGE = 12.0 * pi
 
     @classmethod
-    def setUpClass(self):
-        self.rand = random.Random(12345)
+    def setUpClass(cls):
+        cls.rand = random.Random(12345)
 
     def _TestEquivalentRotation(self, val, hint, result):
-            # If hint is None then we are ignoring that value and it should be 0
-            if val is None:
-                self.assertEqual(result, 0.0)
-                return
+        # If hint is None then we are ignoring that value and it should be 0
+        if val is None:
+            self.assertEqual(result, 0.0)
+            return
             # Make sure the result is within pi of the hint
-            self.assertTrue(abs(result-hint) <= pi,
-                msg='Result {} is not within pi of hint {}'.format(
-                    result, hint))
+        self.assertTrue(
+            abs(result - hint) <= pi,
+            msg=f'Result {result} is not within pi of hint {hint}',
+        )
+
             # Make sure there the angles are equivalent
             # NOTE: The mod operator, %, is necessary here.
             # math.fmod() does not work for this test
-            self.assertAlmostEqual(val % (2.0*pi), result % (2.0*pi),
-                msg='fmod of result {} is not equivalent to fmod of val {} '\
-                'for hint {}'.format(result, val, hint))
+        self.assertAlmostEqual(
+            val % (2.0 * pi),
+            result % (2.0 * pi),
+            msg=f'fmod of result {result} is not equivalent to fmod of val {val} for hint {hint}',
+        )
 
     def testOneChannel(self):
         # Test each channel independently
         for channel in range(4):
             hint = [0] * 4
             val = [None] * 4
-            for i in range(self._NUM_TESTS):
+            for _ in range(self._NUM_TESTS):
                 hint[channel] = self.rand.uniform(
                     -self._TEST_RANGE, self._TEST_RANGE)
                 val[channel]  = self.rand.uniform(

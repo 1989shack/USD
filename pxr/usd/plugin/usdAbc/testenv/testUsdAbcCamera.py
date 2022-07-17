@@ -35,9 +35,9 @@ class TestUsdAlembicCamera(unittest.TestCase):
         Filenames for testing a round trip usd->abc->usd.
         First file name uses FindDataFile to locate it within a test.
         """
-        oldUsdFile = baseName + '.usd'
-        abcFile  = baseName + '_1.abc'
-        newUsdFile  = baseName + '_2.usd'
+        oldUsdFile = f'{baseName}.usd'
+        abcFile = f'{baseName}_1.abc'
+        newUsdFile = f'{baseName}_2.usd'
 
         return oldUsdFile, abcFile, newUsdFile
     

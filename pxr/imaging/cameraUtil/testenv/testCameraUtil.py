@@ -60,7 +60,7 @@ class TestCameraUtil(unittest.TestCase):
                  0.4333280711640,  0.8708306104262,  0.232122447596, 0,
                 -0.1391731009620,  0.3191294276581, -0.937436534593, 0,
                 -9.8349931341753, -6.7672283767831,  1.181556474823, 1))
-                
+
 
         cam.projection = Gf.Camera.Orthographic
 
@@ -189,7 +189,7 @@ class TestCameraUtil(unittest.TestCase):
         cam.verticalAperture         = 75.0
         cam.horizontalApertureOffset = 11.0
         cam.verticalApertureOffset   = 12.0
-        
+
         CameraUtil.ConformWindow(
             camera = cam, policy = CameraUtil.Fit, targetAspect = 2.0)
 

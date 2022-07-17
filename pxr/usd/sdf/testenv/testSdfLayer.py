@@ -42,8 +42,8 @@ class TestSdfLayer(unittest.TestCase):
     def setUpClass(cls):
         # Register dso plugins.
         testRoot = os.path.join(os.path.dirname(__file__), 'SdfPlugins')
-        testPluginsDso = testRoot + '/lib'
-        testPluginsDsoSearch = testPluginsDso + '/*/Resources/'
+        testPluginsDso = f'{testRoot}/lib'
+        testPluginsDsoSearch = f'{testPluginsDso}/*/Resources/'
         Plug.Registry().RegisterPlugins(testPluginsDsoSearch)
 
     def test_IdentifierWithArgs(self):
@@ -433,39 +433,33 @@ def "Root"
             os.path.join(os.getcwd(), "eqPaths/../.")
         ]
 
-        # Iterate over all permutations of these paths calling FindOrOpen
-        # or Find on each one and verifying that they all return the same
-        # layer.
-        i = 0
-        for paths in itertools.permutations(testPaths):
-            i += 1
-            testLayerName = "FindOrOpenEqPaths_{}.sdf".format(i)
+        for i, paths in enumerate(itertools.permutations(testPaths), start=1):
+            testLayerName = f"FindOrOpenEqPaths_{i}.sdf"
             testLayer = Sdf.Layer.CreateAnonymous()
-            Sdf.CreatePrimInLayer(testLayer, "/TestLayer_{}".format(i))
+            Sdf.CreatePrimInLayer(testLayer, f"/TestLayer_{i}")
             self.assertTrue(testLayer.Export(testLayerName))
 
             paths = [os.path.join(p, testLayerName) for p in paths]
             firstLayer = Sdf.Layer.FindOrOpen(paths[0])
-            self.assertTrue(
-                firstLayer,
-                "Unable to open {} (from {})".format(paths[0], paths))
+            self.assertTrue(firstLayer, f"Unable to open {paths[0]} (from {paths})")
 
             for p in paths:
                 testLayer = Sdf.Layer.FindOrOpen(p)
-                self.assertTrue(
-                    testLayer, "Unable to open {} (from {})".format(p, paths))
+                self.assertTrue(testLayer, f"Unable to open {p} (from {paths})")
                 self.assertEqual(
-                    firstLayer, testLayer,
-                    "Layer opened with {} not the same as layer opened "
-                    "with {}".format(p, paths[0]))
+                    firstLayer,
+                    testLayer,
+                    f"Layer opened with {p} not the same as layer opened with {paths[0]}",
+                )
+
 
                 testLayer = Sdf.Layer.Find(p)
-                self.assertTrue(
-                    testLayer, "Unable to find {} (from {})".format(p, paths))
+                self.assertTrue(testLayer, f"Unable to find {p} (from {paths})")
                 self.assertEqual(
-                    firstLayer, testLayer,
-                    "Layer found with {} not the same as layer opened "
-                    "with {}".format(p, paths[0]))
+                    firstLayer,
+                    testLayer,
+                    f"Layer found with {p} not the same as layer opened with {paths[0]}",
+                )
 
     def test_FindRelativeToLayer(self):
         with self.assertRaises(Tf.ErrorException):
@@ -631,7 +625,7 @@ def "Root"
         # Layer find does find the layer now that it's open and it's the only
         # loaded layer.
         self.assertEqual(layer1, Sdf.Layer.Find(layerId))
-        self.assertEqual(set(Sdf.Layer.GetLoadedLayers()), set([layer1]))
+        self.assertEqual(set(Sdf.Layer.GetLoadedLayers()), {layer1})
 
         # Now we try with layer args that should populate the layer
         layerArgs = {"rootName":"Generated"}
@@ -646,14 +640,12 @@ def "Root"
         self.assertTrue(layer2.anonymous)
         # Since a rootName argument was provided, a root prim with the provided
         # name is generated on the layer.
-        self.assertEqual(list(layer2.rootPrims.keys()),
-                         list(["Generated"]))
+        self.assertEqual(list(layer2.rootPrims.keys()), ["Generated"])
 
         # Layer find does find the layer with the provided args now too and 
         # both layers are loaded.
         self.assertEqual(layer2, Sdf.Layer.Find(layerId, layerArgs))
-        self.assertEqual(set(Sdf.Layer.GetLoadedLayers()),
-                         set([layer1, layer2]))
+        self.assertEqual(set(Sdf.Layer.GetLoadedLayers()), {layer1, layer2})
 
         # Call FindOrOpen using the same identifier and args. Verify that it
         # does not open a new layer and returns the existing layer.
@@ -661,8 +653,7 @@ def "Root"
         self.assertEqual(layer2, layer3)
         layer4 = Sdf.Layer.FindOrOpen(layer2.identifier)
         self.assertEqual(layer2, layer4)
-        self.assertEqual(set(Sdf.Layer.GetLoadedLayers()),
-                         set([layer1, layer2]))
+        self.assertEqual(set(Sdf.Layer.GetLoadedLayers()), {layer1, layer2})
 
         # Open another anonymous layer with a different identifier but the 
         # same file format arguments. This is a new layer because the identifier
@@ -671,19 +662,19 @@ def "Root"
                                       layerArgs)
         self.assertNotEqual(layer2, layer5)
         self.assertTrue(layer5.anonymous)
-        self.assertEqual(list(layer5.rootPrims.keys()),
-                         list(["Generated"]))
+        self.assertEqual(list(layer5.rootPrims.keys()), ["Generated"])
 
         # Open another anonymous layer with the same identifier but a different
         # rootName arg. This will also be a new layer
         layer6 = Sdf.Layer.FindOrOpen(layerId, {"rootName":"Other"})
         self.assertNotEqual(layer2, layer6)
         self.assertTrue(layer6.anonymous)
-        self.assertEqual(list(layer6.rootPrims.keys()),
-                         list(["Other"]))
+        self.assertEqual(list(layer6.rootPrims.keys()), ["Other"])
 
-        self.assertEqual(set(Sdf.Layer.GetLoadedLayers()),
-                         set([layer1, layer2, layer5, layer6]))
+        self.assertEqual(
+            set(Sdf.Layer.GetLoadedLayers()), {layer1, layer2, layer5, layer6}
+        )
+
 
         # Test muting the anonymous layer. This will removed the generated
         # root prim.
@@ -693,21 +684,18 @@ def "Root"
         # Test unmuting the layer, the generated root prim returns.
         layer2.SetMuted(False)
         self.assertFalse(layer2.IsMuted())
-        self.assertEqual(list(layer2.rootPrims.keys()),
-                         list(["Generated"]))
+        self.assertEqual(list(layer2.rootPrims.keys()), ["Generated"])
 
         # Test reload
         # First reload returns false since layer hasn't changed.
         self.assertFalse(layer2.Reload())
         # Edit the layer adding a prim to dirty it
         Sdf.CreatePrimInLayer(layer2, Sdf.Path("/NewPrim"))
-        self.assertEqual(list(layer2.rootPrims.keys()),
-                         list(["Generated", "NewPrim"]))
+        self.assertEqual(list(layer2.rootPrims.keys()), ["Generated", "NewPrim"])
         # Reload now succeeds and the layer is in the state when it was first
         # opened with its args.
         self.assertTrue(layer2.Reload())
-        self.assertEqual(list(layer2.rootPrims.keys()),
-                         list(["Generated"]))
+        self.assertEqual(list(layer2.rootPrims.keys()), ["Generated"])
 
         # Test CreateAnonymous for layers of this format. CreateAnonymous 
         # does NOT read any layer contents so the layer will be empty after 
@@ -738,7 +726,9 @@ def "Root"
         self.assertNotEqual(layer8.identifier, layer9.identifier)
         self.assertEqual(
             set(Sdf.Layer.GetLoadedLayers()),
-            set([layer1, layer2, layer5, layer6, layer7, layer8, layer9]))
+            {layer1, layer2, layer5, layer6, layer7, layer8, layer9},
+        )
+
 
         # Force reload the created anonymous layers. This will call Read and
         # generate the appropriate layer contents from the original file format
@@ -747,10 +737,8 @@ def "Root"
         self.assertTrue(layer8.Reload(force=True))
         self.assertTrue(layer9.Reload(force=True))
         self.assertFalse(layer7.rootPrims)
-        self.assertEqual(list(layer8.rootPrims.keys()),
-                         list(["Generated"]))
-        self.assertEqual(list(layer9.rootPrims.keys()),
-                         list(["Generated"]))
+        self.assertEqual(list(layer8.rootPrims.keys()), ["Generated"])
+        self.assertEqual(list(layer9.rootPrims.keys()), ["Generated"])
 
     def test_CreatePrimInLayer(self):
         layer = Sdf.Layer.CreateAnonymous()

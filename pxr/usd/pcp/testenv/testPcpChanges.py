@@ -141,7 +141,7 @@ class TestPcpChanges(unittest.TestCase):
         refLayerPath = 'TestSublayerOffsetChanges/ref.sdf'
         refSublayerPath = 'TestSublayerOffsetChanges/ref-sublayer.sdf'
         ref2LayerPath = 'TestSublayerOffsetChanges/ref2.sdf'
-        
+
         rootLayer = Sdf.Layer.FindOrOpen(rootLayerPath)
         pcp = Pcp.Cache(Pcp.LayerStackIdentifier(rootLayer))
 
@@ -168,7 +168,7 @@ class TestPcpChanges(unittest.TestCase):
         # taken into account after recomputing the index.
         with Pcp._TestChangeProcessor(pcp):
             rootLayer.subLayerOffsets[0] = Sdf.LayerOffset(200.0)
-        
+
         self.assertFalse(pcp.FindPrimIndex('/A'))
         (pi, err) = pcp.ComputePrimIndex('/A')
         refNode = pi.rootNode.children[0]

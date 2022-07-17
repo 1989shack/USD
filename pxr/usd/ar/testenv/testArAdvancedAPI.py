@@ -30,7 +30,7 @@ from pxr import Plug, Ar, Tf
 
 # Test plugins are installed relative to this script
 testRoot = os.path.join(os.path.dirname(__file__), 'ArPlugins')
-testPluginsDsoSearch = testRoot + '/lib/TestArAdvancedAPI*/Resources/'
+testPluginsDsoSearch = f'{testRoot}/lib/TestArAdvancedAPI*/Resources/'
 
 class TestArAdvancedAPI(unittest.TestCase):
     def test_GetAvailableResolvers(self):

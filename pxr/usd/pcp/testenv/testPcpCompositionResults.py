@@ -63,9 +63,7 @@ else:
 
 payloadRegex = re.compile(args.payloads)
 hadError = False
-errorFile = None
-if args.errorFileName:
-    errorFile = open(args.errorFileName, "w")
+errorFile = open(args.errorFileName, "w") if args.errorFileName else None
 if args.dumpMaps and args.dumpPathStr == '':
     print('--dumpMaps must be used in tandem with --dumpPath')
     sys.exit(0)
@@ -115,8 +113,7 @@ for layerPath in args.layer:
     def WalkNodes(node):
         yield node
         for child in node.children:
-            for descendant in WalkNodes(child):
-                yield descendant
+            yield from WalkNodes(child)
 
     # Dump the layer stack.
     errors = []
@@ -289,15 +286,16 @@ for layerPath in args.layer:
 
         def _PrintTargets(targetMap):
             for propPath in sorted(targetMap.keys()):
-                print('%s:' % (propPath))
+                print(f'{propPath}:')
                 for targetPath in targetMap[propPath]:
-                    print('    %s' % targetPath)
+                    print(f'    {targetPath}')
                     # Target paths should never include variant selections.
                     # Variant selections are part of addressing layer
                     # opinion storage (like the asset path); they are
                     # not a feature of composed scene namespace.
-                    assert not targetPath.ContainsPrimVariantSelection(), \
-                        'Target path %s has variant selections' % targetPath
+                    assert (
+                        not targetPath.ContainsPrimVariantSelection()
+                    ), f'Target path {targetPath} has variant selections'
 
         if len(targetsMap) > 0:
             print('\nRelationship targets:')

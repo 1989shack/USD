@@ -36,15 +36,15 @@ if sys.version_info >= (3, 8) and platform.system() == "Windows":
     @contextlib.contextmanager
     def WindowsImportWrapper():
         import os
-        dirs = []
         import_paths = os.getenv('PXR_USD_WINDOWS_DLL_PATH')
         if import_paths is None:
             import_paths = os.getenv('PATH', '')
-        for path in import_paths.split(os.pathsep):
-            # Calling add_dll_directory raises an exception if paths don't
-            # exist, or if you pass in dot
-            if os.path.exists(path) and path != '.':
-                dirs.append(os.add_dll_directory(path))
+        dirs = [
+            os.add_dll_directory(path)
+            for path in import_paths.split(os.pathsep)
+            if os.path.exists(path) and path != '.'
+        ]
+
         # This block guarantees we clear the dll directories if an exception
         # is raised in the with block.
         try:
@@ -82,11 +82,10 @@ def PreparePythonModule(moduleName=None):
         # which results in "_tf".
         if moduleName is None:
             moduleName = f_locals["__name__"].split(".")[-1]
-            moduleName = "_" + moduleName[0].lower() + moduleName[1:]
+            moduleName = f"_{moduleName[0].lower()}{moduleName[1:]}"
 
         with WindowsImportWrapper():
-            module = importlib.import_module(
-                    "." + moduleName, f_locals["__name__"])
+            module = importlib.import_module(f".{moduleName}", f_locals["__name__"])
 
         PrepareModule(module, f_locals)
         try:
@@ -117,7 +116,7 @@ def PrepareModule(module, result):
     newModuleName = result.get('__name__')
 
     for key, value in module.__dict__.items():
-        if not key in ignore:
+        if key not in ignore:
             result[key] = value
 
             # Lie about the module from which value came.

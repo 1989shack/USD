@@ -31,10 +31,7 @@ import unittest
 def Replace(tmpl, safe=False, **kw):
     ts = Tf.TemplateString(tmpl)
     result = ''
-    if safe:
-        result = ts.SafeSubstitute(kw)
-    else:
-        result = ts.Substitute(kw)
+    result = ts.SafeSubstitute(kw) if safe else ts.Substitute(kw)
     print(repr(tmpl), ' -> ', repr(result))
     return result
 

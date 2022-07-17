@@ -28,9 +28,9 @@ import unittest, os
 class TestUsdAbcInstancing(unittest.TestCase):
     def test_InstanceConversion(self):
         name = "nestedInstancing"
-        layer = Sdf.Layer.FindOrOpen('%s.abc' % (name, ))
+        layer = Sdf.Layer.FindOrOpen(f'{name}.abc')
         self.assertTrue(layer)
-        layer.Export('%s.%s.usda' % (name, os.environ['USD_ABC_TESTSUFFIX']))
+        layer.Export(f"{name}.{os.environ['USD_ABC_TESTSUFFIX']}.usda")
 
 if __name__ == "__main__":
     unittest.main()

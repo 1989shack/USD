@@ -32,7 +32,7 @@ status = 0
 def err(msg):
     global status
     status += 1
-    return 'ERROR: ' + msg + ' failed'
+    return f'ERROR: {msg} failed'
 
 
 try:
@@ -46,12 +46,12 @@ try:
     q = p
     assert TestRefObject.GetNumInstances() == 1, err("ref sharing")
     assert p == q, err("ref equality testing")
-    assert not (p != q), err("ref non-equality testing")
+    assert p == q, err("ref non-equality testing")
     p = None
     assert TestRefObject.GetNumInstances() == 1, err("ref sharing")
     q = None
     assert TestRefObject.GetNumInstances() == 0, err("ref deletion")
-    
+
     #
     # Try getting a null refptr.
     #
@@ -77,7 +77,7 @@ try:
     assert TestWeakObject.GetNumInstances() == 1, err("weak sharing")
     p = q.GetInstance()
     assert p == q, err("weak equality testing")
-    assert not (p != q), err("weak non-equality testing")
+    assert p == q, err("weak non-equality testing")
     q.KillInstance()
     assert TestWeakObject.GetNumInstances() == 0, err("weak sharing")
     assert q.expired and p.expired, err("weak ptr expiry")
@@ -126,7 +126,7 @@ try:
         pass
     else:
         assert False, err('bad injected method on WeakObject2')
-        
+
 
 except Exception as e:
     status += 1

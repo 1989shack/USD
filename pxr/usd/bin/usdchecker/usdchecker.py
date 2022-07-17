@@ -38,7 +38,7 @@ class TermColors:
 
 @contextmanager
 def _Stream(path, *args, **kwargs):
-    if path == 'stdout' or path == '-':
+    if path in ['stdout', '-']:
         yield sys.stdout
     elif path == 'stderr':
         yield sys.stderr
@@ -97,7 +97,7 @@ def main():
     args = parser.parse_args()
     inputFile = args.inputFile
     outFile = args.outFile
-    
+
     checker = UsdUtils.ComplianceChecker(arkit=args.arkit, 
                                          skipARKitRootLayerCheck=False, 
                                          rootPackageOnly=args.rootPackageOnly, 
@@ -120,15 +120,15 @@ def main():
     warnings = checker.GetWarnings()
     errors = checker.GetErrors()
     failedChecks = checker.GetFailedChecks()
-    
+
     with _Stream(outFile, 'w') as ofp:
-        
+
         for msg in warnings:
             # Add color if we're outputting normally to a terminal.
             if ofp == sys.stdout:
                 msg = TermColors.WARN + msg  + TermColors.END
             _Print(ofp, msg)
-        
+
         for msg in errors + failedChecks:
             # Add color if we're outputting normally to a terminal.
             if ofp == sys.stdout:

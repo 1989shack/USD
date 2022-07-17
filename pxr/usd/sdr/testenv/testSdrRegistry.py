@@ -33,7 +33,7 @@ import unittest
 
 # The test discovery plugin is installed relative to this script
 testRoot = os.path.join(os.path.dirname(__file__), 'SdrPlugins')
-testPluginsDsoSearch = testRoot + '/lib/*/Resources/'
+testPluginsDsoSearch = f'{testRoot}/lib/*/Resources/'
 
 class TestShaderNode(unittest.TestCase):
     # The following source types are what we expect to discover from
@@ -124,8 +124,8 @@ class TestShaderNode(unittest.TestCase):
             "TestNodeARGS2",
             "TestNodeOSL",
             "TestNodeSameName",
-            "TestNodeSameName"
         }
+
 
         assert self.reg.GetSearchURIs() == ["/TestSearchPath", "/TestSearchPath2"]
 
@@ -218,9 +218,17 @@ class TestShaderNode(unittest.TestCase):
                 sdrType = prop.GetType()
                 sdfType, sdfHint = prop.GetTypeAsSdfType()
                 expectedSdrType, expectedSdfType = expectedTypes[prop.GetName()]
-                print("  ", prop.GetName(), sdrType, str(sdfType), 'vs expected', \
-                      expectedSdrType, str(expectedSdfType))
-                if not (sdrType == expectedSdrType and sdfType == expectedSdfType):
+                print(
+                    "  ",
+                    prop.GetName(),
+                    sdrType,
+                    sdfType,
+                    'vs expected',
+                    expectedSdrType,
+                    expectedSdfType,
+                )
+
+                if sdrType != expectedSdrType or sdfType != expectedSdfType:
                     print("     MISMATCH")
                 assert sdrType == expectedSdrType and sdfType == expectedSdfType
 

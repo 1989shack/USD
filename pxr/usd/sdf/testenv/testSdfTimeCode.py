@@ -75,11 +75,11 @@ class TestSdfTimeCode(unittest.TestCase):
 
         self.assertTrue(timeCode2 == Sdf.TimeCode(3))
         self.assertTrue(timeCode2 == 3)
-        self.assertTrue(3 == timeCode2)
+        self.assertTrue(timeCode2 == 3)
 
         self.assertTrue(timeCode3 != Sdf.TimeCode(3))
         self.assertTrue(timeCode3 != 3)
-        self.assertTrue(3 != timeCode3)
+        self.assertTrue(timeCode3 != 3)
 
         self.assertFalse(timeCode1 < timeCode1)
         self.assertTrue(timeCode1 < timeCode2)
@@ -89,9 +89,9 @@ class TestSdfTimeCode(unittest.TestCase):
         self.assertTrue(timeCode1 < 3)
         self.assertFalse(timeCode1 < -2.5)
 
-        self.assertFalse(0 < timeCode1 )
-        self.assertFalse(3 < timeCode1)
-        self.assertTrue(-2.5 < timeCode1)
+        self.assertFalse(timeCode1 > 0)
+        self.assertFalse(timeCode1 > 3)
+        self.assertTrue(timeCode1 > -2.5)
 
         self.assertTrue(timeCode1 <= timeCode1)
         self.assertTrue(timeCode1 <= timeCode2)
@@ -101,9 +101,9 @@ class TestSdfTimeCode(unittest.TestCase):
         self.assertTrue(timeCode1 <= 3)
         self.assertFalse(timeCode1 <= -2.5)
 
-        self.assertTrue(0 <= timeCode1)
-        self.assertFalse(3 <= timeCode1)
-        self.assertTrue(-2.5 <= timeCode1)
+        self.assertTrue(timeCode1 >= 0)
+        self.assertFalse(timeCode1 >= 3)
+        self.assertTrue(timeCode1 >= -2.5)
 
         self.assertFalse(timeCode1 > timeCode1)
         self.assertFalse(timeCode1 > timeCode2)
@@ -113,9 +113,9 @@ class TestSdfTimeCode(unittest.TestCase):
         self.assertFalse(timeCode1 > 3)
         self.assertTrue(timeCode1 > -2.5)
 
-        self.assertFalse(0 > timeCode1 )
-        self.assertTrue(3 > timeCode1)
-        self.assertFalse(-2.5 > timeCode1)
+        self.assertFalse(timeCode1 < 0)
+        self.assertTrue(timeCode1 < 3)
+        self.assertFalse(timeCode1 < -2.5)
 
         self.assertTrue(timeCode1 >= timeCode1)
         self.assertFalse(timeCode1 >= timeCode2)
@@ -125,9 +125,9 @@ class TestSdfTimeCode(unittest.TestCase):
         self.assertFalse(timeCode1 >= 3)
         self.assertTrue(timeCode1 >= -2.5)
 
-        self.assertTrue(0 >= timeCode1)
-        self.assertTrue(3 >= timeCode1)
-        self.assertFalse(-2.5 >= timeCode1)
+        self.assertTrue(timeCode1 <= 0)
+        self.assertTrue(timeCode1 <= 3)
+        self.assertFalse(timeCode1 <= -2.5)
 
     def test_Arithmetic(self):
         # Test the existence of the basic aritmetic operators +, -, *, /

@@ -58,19 +58,18 @@ outLayer = Sdf.Layer.CreateNew(results.out)
 # try opening all files
 openedFiles = [Sdf.Layer.FindOrOpen(fname) for fname in results.usdFiles]
 # grab the index of all, if any, files which failed to open
-unopened = [i for i, unopened in enumerate(openedFiles) if unopened == None ]
+unopened = [i for i, unopened in enumerate(openedFiles) if unopened is None]
 # grab the filenames of the failed files for error messaging
 erroredFiles = ' '.join([results.usdFiles[i] for i in unopened])
 # if we failed to open any files, error out
-assert len(unopened) == 0, 'unable to open file(s) %s' %erroredFiles
-    
+assert not unopened, f'unable to open file(s) {erroredFiles}'
+
 # the extra computation and fail more gracefully
 try:
     for usdFile in openedFiles:
         UsdUtils.StitchLayers(outLayer, usdFile)
         outLayer.Save()
-# if something in the authoring fails, remove the output file
 except Exception as e:
-    print('Failed to complete stitching, removing output file %s' % results.out)
+    print(f'Failed to complete stitching, removing output file {results.out}')
     print(e)
     os.remove(results.out) 

@@ -57,18 +57,22 @@ def _compareFiles(installedFiles, generatedFiles, configuration):
         exit('*** Missing files:\n' + '\n'.join(installedNames - generatedNames))
 
     diffs = {}
-    for i in range(0, len(installedFiles)):
-        with open(installedFiles[i], 'r') as installedFile,\
-             open(generatedFiles[i], 'r') as generatedFile:
+    for i in range(len(installedFiles)):
+        with open(installedFiles[i], 'r') as installedFile, open(generatedFiles[i], 'r') as generatedFile:
             
             installedContent = installedFile.read()
             generatedContent = generatedFile.read()
 
             if installedContent != generatedContent:
-                diff = '\n'.join(unified_diff(installedContent.split('\n'),
-                                              generatedContent.split('\n'),
-                                              'Source ' + installedFile.name,
-                                              'Generated ' + generatedFile.name))
+                diff = '\n'.join(
+                    unified_diff(
+                        installedContent.split('\n'),
+                        generatedContent.split('\n'),
+                        f'Source {installedFile.name}',
+                        f'Generated {generatedFile.name}',
+                    )
+                )
+
                 diffs[basename(installedFile.name)] = diff
 
             if diffs and failOnDiff:
@@ -81,14 +85,14 @@ def _copyGeneratedFiles(installedFiles, generatedFiles, diffs):
     for generatedFile, installedFile in zip(generatedFiles, installedFiles):
         baseName = basename(installedFile)
         if baseName in diffs:
-            print('Changed: ' + baseName)
+            print(f'Changed: {baseName}')
             print(diffs[baseName])
             if not access(installedFile, W_OK):
-                print('Cannot author ' + installedFile + ', (no write access).')
+                print(f'Cannot author {installedFile}, (no write access).')
             else:
-                copyfile(generatedFile, installedFile) 
+                copyfile(generatedFile, installedFile)
         else:
-            print('Unchanged: ' + baseName)
+            print(f'Unchanged: {baseName}')
 
 # -----------------------------------------------------------------------------
 # Code generation functions.
@@ -104,23 +108,23 @@ def _runBisonAndFlexCommands(configuration):
     destDir  = configuration[DEST_DIR]
     bases    = configuration[BASES]
 
-    bisonFiles      = [join(srcDir, base + '.yy') for base in bases] 
-    flexFiles       = [join(srcDir, base + '.ll') for base in bases]
-    bisonGenSources = [join(destDir, base + '.tab.cpp') for base in bases]
-    bisonGenHeaders = [join(destDir, base + '.tab.hpp') for base in bases]
-    flexGenSources  = [join(destDir, base + '.lex.cpp') for base in bases]
+    bisonFiles = [join(srcDir, f'{base}.yy') for base in bases]
+    flexFiles = [join(srcDir, f'{base}.ll') for base in bases]
+    bisonGenSources = [join(destDir, f'{base}.tab.cpp') for base in bases]
+    bisonGenHeaders = [join(destDir, f'{base}.tab.hpp') for base in bases]
+    flexGenSources = [join(destDir, f'{base}.lex.cpp') for base in bases]
 
     sourceFiles    = bisonFiles + flexFiles
     generatedFiles = bisonGenHeaders + bisonGenSources + flexGenSources
 
     # generate all components of a flex/bison command, these
-    # include the desired executables, flag settings 
-    bisonFlags = lambda base: ['-d', '-p', base + 'Yy', '-o']
-    flexFlags  = lambda base: ['-P'+ base + "Yy", '-Cfe', '-o']
+    # include the desired executables, flag settings
+    bisonFlags = lambda base: ['-d', '-p', f'{base}Yy', '-o']
+    flexFlags = lambda base: [f'-P{base}Yy', '-Cfe', '-o']
 
     bisonExecutable = configuration[BISON_EXE]
     flexExecutable  = configuration[FLEX_EXE]
-    
+
     bisonCommand = lambda index: ([bisonExecutable]
                                   + bisonFlags(base) 
                                   + [bisonGenSources[index]] 
@@ -130,13 +134,13 @@ def _runBisonAndFlexCommands(configuration):
                                   + flexFlags(base)
                                   + [flexGenSources[index]]
                                   + [flexFiles[index]])
-    
+
     for index, base in enumerate(bases):
-        print('Running bison on %s' % (base + '.yy'))
+        print(f'Running bison on {base}.yy')
         print('    ', ' '.join(bisonCommand(index)))
         call(bisonCommand(index))
 
-        print('Running flex on %s' % (base + '.ll'))
+        print(f'Running flex on {base}.ll')
         print('    ', ' '.join(flexCommand(index)))
         call(flexCommand(index))
 
@@ -208,22 +212,22 @@ def _canonicalizeFiles(sourceFiles, generatedFiles):
 
     # create a list of pairs, representing the things to replace in our
     # generated files
-    replacements = [] 
+    replacements = []
     for index, fileName in enumerate(list(generatedFiles+sourceFiles)):
         oldFileName = fileName
         newFileName = identifiers[index]
         replacements.append((oldFileName, newFileName))
 
     for renamedFile in renamed:
-        print('Fixing line directives in ' + basename(renamedFile))
+        print(f'Fixing line directives in {basename(renamedFile)}')
 
         with open(renamedFile, 'r+') as inputFile:
             data = inputFile.read()
-            
+
             # find and replace all generated file names
             for oldFileName, newFileName in replacements:
                 data = data.replace(oldFileName, newFileName)
-            
+
             # we seek to 0 and truncate as we intend 
             # to overwrite the existing data in the file
             inputFile.seek(0)
@@ -269,13 +273,13 @@ def _getConfiguration():
                BISON_EXE : arguments.bison,
                FLEX_EXE  : arguments.flex,
                BASES     : arguments.bases }
-               
+
     # Ensure all optional arguments get properly populated
     if not arguments.bases:
         allFiles = listdir(arguments.srcDir)
         validExts = ['.yy', '.ll']
         relevantFiles = [f for f in allFiles if splitext(f)[1] in validExts]
-        bases = set([splitext(f)[0] for f in relevantFiles])
+        bases = {splitext(f)[0] for f in relevantFiles}
 
         if not bases:
             exit('*** Unable to find source files for parser. Ensure that they '
@@ -292,11 +296,17 @@ def _validateSourceDirectory(configuration):
     bases = configuration[BASES]
     srcDir = configuration[SRC_DIR]
 
-    allFiles = ([join(srcDir, base + '.yy') for base in bases] 
-                + [join(srcDir, base + '.ll') for base in bases]
-                + [join(srcDir, base + '.tab.cpp') for base in bases]
-                + [join(srcDir, base + '.tab.h') for base in bases]
-                + [join(srcDir, base + '.lex.cpp') for base in bases])
+    allFiles = (
+        (
+            (
+                [join(srcDir, f'{base}.yy') for base in bases]
+                + [join(srcDir, f'{base}.ll') for base in bases]
+            )
+            + [join(srcDir, f'{base}.tab.cpp') for base in bases]
+        )
+        + [join(srcDir, f'{base}.tab.h') for base in bases]
+    ) + [join(srcDir, f'{base}.lex.cpp') for base in bases]
+
 
     if not all(isfile(f) for f in allFiles):
         exit('*** Invalid source directory. This directory must '
@@ -317,16 +327,16 @@ if __name__ == '__main__':
 
     _printSection('Canonicalizing generated files')
     generatedFiles = _canonicalizeFiles(sourceFiles, generatedFiles)
-    
+
     diffSectionMsg = 'Checking for diffs'
     if configuration[VALIDATE]:
-        diffSectionMsg = diffSectionMsg + '(validation on)'
+        diffSectionMsg += '(validation on)'
 
     _printSection(diffSectionMsg)
     installedFiles = [join(configuration[SRC_DIR], basename(f)) 
                       for f in generatedFiles]
 
     diffs = _compareFiles(installedFiles, generatedFiles, configuration)
-    _copyGeneratedFiles(installedFiles, generatedFiles, diffs) 
+    _copyGeneratedFiles(installedFiles, generatedFiles, diffs)
     # If validation passed, clean up the generated files
     rmtree(configuration[DEST_DIR])

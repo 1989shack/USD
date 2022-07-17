@@ -162,11 +162,7 @@ def _diff(fileName, baselineDir, verbose):
     # because it's possible we might want to specify other diff programs
     # in the future.
     import platform
-    if platform.system() == 'Windows':
-        diff = 'fc.exe'
-    else:
-        diff = '/usr/bin/diff'
-
+    diff = 'fc.exe' if platform.system() == 'Windows' else '/usr/bin/diff'
     filesToDiff = glob.glob(fileName)
     if not filesToDiff:
         sys.stderr.write(
@@ -188,11 +184,7 @@ def _imageDiff(fileName, baseLineDir, verbose, env, warn=None, warnpercent=None,
                hardwarn=None, fail=None, failpercent=None, hardfail=None,
                perceptual=None):
     import platform
-    if platform.system() == 'Windows':
-        imageDiff = 'idiff.exe'
-    else:
-        imageDiff = 'idiff'
-
+    imageDiff = 'idiff.exe' if platform.system() == 'Windows' else 'idiff'
     cmdArgs = []
     if warn is not None:
         cmdArgs.extend(['-warn', warn])
@@ -216,10 +208,7 @@ def _imageDiff(fileName, baseLineDir, verbose, env, warn=None, warnpercent=None,
         cmdArgs.extend(['-p'])
 
     for image in glob.glob(fileName):
-        cmd = [imageDiff]
-        cmd.extend(cmdArgs)
-        cmd.extend([_resolvePath(baseLineDir, image), image])
-
+        cmd = [imageDiff, *cmdArgs, *[_resolvePath(baseLineDir, image), image]]
         if verbose:
             print("image diffing with {0}".format(cmd))
 
@@ -252,9 +241,7 @@ def _copyTree(src, dest):
 # want the exit code 134 as that is what the script would return when run
 # from the shell. This is well defined to be 128 + (signal number).
 def _convertRetCode(retcode):
-    if retcode < 0:
-        return 128 + abs(retcode)
-    return retcode
+    return 128 + abs(retcode) if retcode < 0 else retcode
 
 def _getRedirects(out_redir, err_redir):
     return (open(out_redir, 'w') if out_redir else None,
@@ -265,7 +252,7 @@ def _runCommand(raw_command, stdout_redir, stderr_redir, env,
     cmd = shlex.split(raw_command)
     fout, ferr = _getRedirects(stdout_redir, stderr_redir)
     try:
-        print("cmd: %s" % (cmd, ))
+        print(f"cmd: {cmd}")
         retcode = _convertRetCode(subprocess.call(cmd, shell=False, env=env,
                                   stdout=(fout or sys.stdout), 
                                   stderr=(ferr or sys.stderr)))

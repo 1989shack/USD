@@ -82,22 +82,17 @@ def vecWithType( vecType, type ):
             return Gf.Vec4h
         elif type == 'i':
             return Gf.Vec4i
-    assert False, "No valid conversion for " + vecType + " to type " + type
+    assert False, f"No valid conversion for {vecType} to type {type}"
     return None
 
 
 def checkVec( vec, values ):
-    for i in range(len(vec)):
-        if vec[i] != values[i]:
-            return False
-    return True
+    return all(vec[i] == values[i] for i in range(len(vec)))
 
 def checkVecDot( v1, v2, dp ):
     if len(v1) != len(v2):
         return False
-    checkdp = 0
-    for i in range(len(v1)):
-        checkdp += v1[i] * v2[i]
+    checkdp = sum(v1[i] * v2[i] for i in range(len(v1)))
     return checkdp == dp
 
 
@@ -133,15 +128,15 @@ class TestGfVec(unittest.TestCase):
             v = Vec(3,1,4,1)
             self.assertTrue(checkVec( v, values ))
         else:
-            self.assertTrue(False, "No explicit constructor check for " + Vec)
+            self.assertTrue(False, f"No explicit constructor check for {Vec}")
 
         # constructor taking single scalar value.
         v = Vec(0)
-        self.assertTrue(all([x == 0 for x in v]))
+        self.assertTrue(all(x == 0 for x in v))
         v = Vec(1)
-        self.assertTrue(all([x == 1 for x in v]))
+        self.assertTrue(all(x == 1 for x in v))
         v = Vec(2)
-        self.assertTrue(all([x == 2 for x in v]))
+        self.assertTrue(all(x == 2 for x in v))
 
         # conversion from other types to this float type.
         if isFloatingPoint(Vec):
@@ -236,7 +231,7 @@ class TestGfVec(unittest.TestCase):
         self.assertEqual(v1, eval(repr(v1)))
 
         # string
-        self.assertTrue(len(str(Vec())) > 0)
+        self.assertTrue(str(Vec()) != "")
 
         # indexing
         v = Vec()
@@ -255,16 +250,16 @@ class TestGfVec(unittest.TestCase):
         v = Vec()
         value = [3, 1, 4, 1]
         SetVec( v, value )
-        value = v[0:v.dimension]
+        value = v[:v.dimension]
 
         self.assertEqual(v[:], value)
         self.assertEqual(v[:2], value[:2])
-        self.assertEqual(v[0:2], value[0:2])
+        self.assertEqual(v[:2], value[:2])
         self.assertEqual(v[-2:], value[-2:])
         self.assertEqual(v[1:1], [])
 
         if v.dimension > 2:
-            self.assertEqual(v[0:3:2], [3, 4])
+            self.assertEqual(v[:3:2], [3, 4])
 
         v[:2] = (8, 9)
         checkVec(v, [8, 9, 4, 1])
@@ -297,7 +292,7 @@ class TestGfVec(unittest.TestCase):
             SetVec( v1, [3, 1, 4, 1] )
             l = Gf.GetLength( v1 )
             l2 = v1.GetLength()
-            self.assertTrue(Gf.IsClose(l, l2, eps), repr(l) + ' ' + repr(l2))
+            self.assertTrue(Gf.IsClose(l, l2, eps), f'{repr(l)} {repr(l2)}')
             self.assertTrue(Gf.IsClose(l, math.sqrt(Gf.Dot(v1, v1)), eps), \
                 ' '.join([repr(x) for x in [l, v1, math.sqrt(Gf.Dot(v1, v1))]]))
 

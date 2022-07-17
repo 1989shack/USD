@@ -109,9 +109,7 @@ class TestPathUtils(unittest.TestCase):
 
             except OSError:
                 # On windows this is expected if run by a non-administrator
-                if platform.system() == 'Windows':
-                    pass
-                else:
+                if platform.system() != 'Windows':
                     raise
 
 if __name__ == '__main__':

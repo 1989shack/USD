@@ -55,7 +55,6 @@ class TestUsdCollectionAPI(unittest.TestCase):
     def tearDown(self):
         # Discard any edits made to layers
         stage.Reload()
-        pass
 
     def test_AuthorCollections(self):
         # ----------------------------------------------------------
@@ -324,7 +323,7 @@ class TestUsdCollectionAPI(unittest.TestCase):
         self.assertEqual(len(Usd.CollectionAPI.ComputeIncludedObjects(
                 allGeomMquery,stage,
                 predicate=Usd.TraverseInstanceProxies())), 11)
-    
+
         allGeomProperties = Usd.CollectionAPI(testPrim, "allGeomProperties")
         (valid, reason) = allGeomProperties.Validate()
         allGeomPropertiesMquery = allGeomProperties.ComputeMembershipQuery()
@@ -352,7 +351,7 @@ class TestUsdCollectionAPI(unittest.TestCase):
         for obj in incObjects:
             self.assertTrue(obj.IsInstanceProxy())
             self.assertFalse(obj.IsInPrototype())
-        
+
         coneProperties = Usd.CollectionAPI(testPrim, "coneProperties")
         (valid, reason) = coneProperties.Validate()
         self.assertTrue(valid)
@@ -370,7 +369,9 @@ class TestUsdCollectionAPI(unittest.TestCase):
         includesCollectionMquery = includesCollection.ComputeMembershipQuery()
         self.assertEqual(
             set(includesCollectionMquery.GetIncludedCollections()),
-            set([Sdf.Path("/CollectionTest/Geom/Shapes.collection:allShapes")]))
+            {Sdf.Path("/CollectionTest/Geom/Shapes.collection:allShapes")},
+        )
+
         incObjects = Usd.CollectionAPI.ComputeIncludedObjects(
                 includesCollectionMquery, stage)
         self.assertTrue(hemiSphere2 in incObjects)
@@ -384,8 +385,12 @@ class TestUsdCollectionAPI(unittest.TestCase):
             includesNestedCollection.ComputeMembershipQuery()
         self.assertEqual(
             set(includesNestedCollectionMquery.GetIncludedCollections()),
-            set([Sdf.Path("/CollectionTest/Geom/Shapes.collection:allShapes"),
-                 Sdf.Path("/CollectionTest/Geom.collection:allGeom")]))
+            {
+                Sdf.Path("/CollectionTest/Geom/Shapes.collection:allShapes"),
+                Sdf.Path("/CollectionTest/Geom.collection:allGeom"),
+            },
+        )
+
 
         excludeInstanceGeom = Usd.CollectionAPI(testPrim, "excludeInstanceGeom")
         (valid, reason) = excludeInstanceGeom.Validate()
@@ -599,9 +604,11 @@ class TestUsdCollectionAPI(unittest.TestCase):
                     self.assertNotEqual(mqueries[i], mqueries[j])
 
         # Confirm that the hash operator lets us use python dicts
-        mqueryToPath = {}
-        for (coll,mquery) in zip(collections, mqueries):
-            mqueryToPath[mquery] = coll.GetCollectionPath()
+        mqueryToPath = {
+            mquery: coll.GetCollectionPath()
+            for coll, mquery in zip(collections, mqueries)
+        }
+
         self.assertEqual(len(mqueryToPath.keys()), len(mqueries))
 
     def test_SchemaPropertyBaseNames(self):

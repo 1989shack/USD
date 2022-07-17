@@ -25,12 +25,12 @@
 from pxr import Sdf, Usd, Tf
 import unittest
 
-allFormats = ['usd' + x for x in 'ac']
+allFormats = [f'usd{x}' for x in 'ac']
 
 class TestUsdClasses(unittest.TestCase):
     def test_Basic(self):
         for fmt in allFormats:
-            l = Sdf.Layer.CreateAnonymous('BasicClassTest.'+fmt)
+            l = Sdf.Layer.CreateAnonymous(f'BasicClassTest.{fmt}')
 
             stage = Usd.Stage.Open(l.identifier)
 

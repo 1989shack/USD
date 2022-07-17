@@ -31,7 +31,7 @@ def TestBug119633():
     layerFile = 'root.usda'
     try:
         stage = Usd.Stage.Open(layerFile)
-        assert stage, 'failed to create stage for %s' % layerFile
+        assert stage, f'failed to create stage for {layerFile}'
         prim = stage.GetPrimAtPath('/SardineGroup_OceanA')
         assert prim, 'failed to find prim /World'
     except Tf.ErrorException:

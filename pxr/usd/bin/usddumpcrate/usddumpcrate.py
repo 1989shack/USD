@@ -27,10 +27,10 @@ import argparse, sys, os
 from pxr import Sdf, Usd
 
 def Err(msg):
-    print('Error: ' + msg, file=sys.stderr)
+    print(f'Error: {msg}', file=sys.stderr)
 
 def PrintReport(fname, info, summaryOnly):
-    print('@%s@' % fname, 'file version', info.GetFileVersion())
+    print(f'@{fname}@', 'file version', info.GetFileVersion())
     ss = info.GetSummaryStats()
     print ('  %s specs, %s paths, %s tokens, %s strings, '
            '%s fields, %s field sets' % 
@@ -61,7 +61,7 @@ def main():
         try:
             info = Usd.CrateInfo.Open(fname)
             if not info:
-                Err('Failed to read %s' % fname)
+                Err(f'Failed to read {fname}')
                 continue
         except Exception as e:
             Err('Failed to read %s\n %s' % (fname,e))

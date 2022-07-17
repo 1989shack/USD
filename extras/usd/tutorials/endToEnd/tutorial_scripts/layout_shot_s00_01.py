@@ -55,8 +55,8 @@ def main():
     stage.GetEditTarget().GetLayer().Save()
 
     print('===')
-    print('usdview %s' % shotFilePath)
-    print('usdcat %s' % layoutLayerFilePath)
+    print(f'usdview {shotFilePath}')
+    print(f'usdcat {layoutLayerFilePath}')
 
 def _SetupBilliards(stage):
     from pxr import Kind, Sdf, Usd, UsdGeom
@@ -74,7 +74,7 @@ def _SetupBilliards(stage):
     # deactivate everything that isn't 8, 9, 1, 4.  We accumulate the prims we
     # want to deactivate so that we don't delete while iterating.
     roomProps = stage.GetPrimAtPath('/World/sets/Room_set/Props')
-    keepers = set(['Ball_%d' % i for i in [1, 9, 8, 4] ])
+    keepers = {'Ball_%d' % i for i in [1, 9, 8, 4]}
     toDeactivate = []
     for child in roomProps.GetChildren():
         if child.GetName() not in keepers:

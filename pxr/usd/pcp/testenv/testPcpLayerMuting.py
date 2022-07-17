@@ -31,7 +31,7 @@ class TestPcpLayerMuting(unittest.TestCase):
 
     def _LoadPcpCache(self, layerPath, sessionLayerPath=None):
         layer = self._LoadLayer(layerPath)
-        sessionLayer = None if not sessionLayerPath else self._LoadLayer(sessionLayerPath)
+        sessionLayer = self._LoadLayer(sessionLayerPath) if sessionLayerPath else None
         return Pcp.Cache(Pcp.LayerStackIdentifier(layer, sessionLayer))
 
     def test_MutingSublayers(self):

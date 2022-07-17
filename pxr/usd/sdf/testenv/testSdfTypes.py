@@ -240,7 +240,7 @@ class TestSdfTypes(unittest.TestCase):
                  dict(name='uint', min=0, max=2**32-1),
                  dict(name='int64', min=-2**63, max=2**63-1),
                  dict(name='uint64', min=0, max=2**64-1)]
-    
+
         layer = Sdf.Layer.CreateAnonymous()
         p = Sdf.CreatePrimInLayer(layer, '/p')
         a = Sdf.AttributeSpec(p, 'attr', Sdf.ValueTypeNames.Int)
@@ -251,22 +251,22 @@ class TestSdfTypes(unittest.TestCase):
             # value strings that are out of range for given attribute types.  An
             # alternative approach would be to provide a template string that we
             # attempt to parse, but that assumes the current text file format.
-            
+
             # Overwrite scene description and attempt to write/read.
             a.SetInfo('typeName', t['name'])
-    
+
             # Min and max values should come through okay.
             a.SetInfo('default', Sdf.UnregisteredValue(str(t['min'])))
             layer.ImportFromString(layer.ExportToString())
             a.SetInfo('default', Sdf.UnregisteredValue(str(t['max'])))
             layer.ImportFromString(layer.ExportToString())
-    
+
             # One more than the max and one less than the min should fail.
             a.SetInfo('default', Sdf.UnregisteredValue(str(t['min'] - 1)))
 
             with self.assertRaises(RuntimeError):
                layer.ImportFromString(layer.ExportToString())
-    
+
             with self.assertRaises(RuntimeError):
                 a.SetInfo('default', Sdf.UnregisteredValue(str(t['max'] + 1)))
                 layer.ImportFromString(layer.ExportToString())

@@ -33,7 +33,7 @@ status = 0
 def err( msg ):
     global status
     status += 1
-    return "ERROR: " + msg + " failed"
+    return f"ERROR: {msg} failed"
 
 class TestVtValue(unittest.TestCase):
 

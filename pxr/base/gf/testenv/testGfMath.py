@@ -36,7 +36,7 @@ if sys.version_info.major >= 3:
     long = int
 
 def err( msg ):
-    return "ERROR: " + msg + " failed"
+    return f"ERROR: {msg} failed"
 
 class TestGfMath(unittest.TestCase):
 

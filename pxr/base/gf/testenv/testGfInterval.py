@@ -32,12 +32,11 @@ from pxr import Gf
 class TestGfInterval(unittest.TestCase):
 
     def runTest(self):
-        testIntervals = []
         inf = float("inf")
 
         # Empty interval
         i0 = Gf.Interval()
-        testIntervals.append(i0)
+        testIntervals = [i0]
         self.assertTrue(i0.isEmpty)
 
         # Non-empty: [1,1]

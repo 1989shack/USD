@@ -43,9 +43,14 @@ def _ConcatWithList(arg1, arg2, *args):
 def _ConcatWithKwArgs(arg1, arg2, arg3 = "c", arg4 = "d", **kwargs):
     return str.join(
         " ",
-        [str(a) for a in
-            [arg1, arg2, arg3, arg4]
-            + ["%s=%s" % (k, kwargs[k]) for k in sorted(kwargs.keys())]])
+        [
+            str(a)
+            for a in (
+                [arg1, arg2, arg3, arg4]
+                + [f"{k}={kwargs[k]}" for k in sorted(kwargs.keys())]
+            )
+        ],
+    )
 
 def _GetTheeToANonery(arg):
     assert arg is None

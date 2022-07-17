@@ -28,11 +28,11 @@ from __future__ import print_function
 import sys, os, unittest
 from pxr import Usd, Sdf, Gf, Tf
 
-allFormats = ['usd' + x for x in 'ac']
+allFormats = [f'usd{x}' for x in 'ac']
 
 def _AssertTrue(test, errorMessage):
     if not test:
-        print("*** ERROR: " + errorMessage, file=sys.stderr)
+        print(f"*** ERROR: {errorMessage}", file=sys.stderr)
         sys.exit(1)
 
 def _AssertFalse(test, errorMessage):
@@ -53,29 +53,28 @@ class TestUsdCreateProperties(unittest.TestCase):
         # Parameters
         prim = "/Foo"
         prop = "Something"
-        propPath = prim + "." + prop
+        propPath = f"{prim}.{prop}"
         value = Gf.Vec3f(1.0, 2.0, 3.0)
 
         for fmt in allFormats:
             # Setup a new stage
-            layer = _CreateLayer("foo."+fmt)
+            layer = _CreateLayer(f"foo.{fmt}")
             stage = Usd.Stage.Open(layer.identifier)
 
             # This ensures incremental recomposition will pickup newly created prims
-            _AssertFalse(stage.GetPrimAtPath(prim), 
-                         "Prim already exists at " + prim)
+            _AssertFalse(stage.GetPrimAtPath(prim), f"Prim already exists at {prim}")
 
             stage.OverridePrim(prim)
-            _AssertTrue(stage.GetPrimAtPath(prim), 
-                        "Failed to create prim at " + prim)
+            _AssertTrue(stage.GetPrimAtPath(prim), f"Failed to create prim at {prim}")
 
             p = stage.GetPrimAtPath(prim)
-            _AssertTrue(not p.GetAttribute(prop), 
-                        "Attribute already exists at " + propPath)
+            _AssertTrue(
+                not p.GetAttribute(prop), f"Attribute already exists at {propPath}"
+            )
+
 
             p.CreateAttribute(prop, Sdf.ValueTypeNames.String)
-            _AssertTrue(p.GetAttribute(prop), 
-                        "Failed to create attribute at " + propPath)
+            _AssertTrue(p.GetAttribute(prop), f"Failed to create attribute at {propPath}")
 
             #
             # Verify default parameters are set as expected
@@ -116,8 +115,8 @@ class TestUsdCreateProperties(unittest.TestCase):
             #
             # Setup layers, stage, prims, attributes and relationships.
             #
-            weakLayer = _CreateLayer("SpecCreationTest_weak."+fmt)
-            strongLayer = _CreateLayer("SpecCreationTest_strong."+fmt)
+            weakLayer = _CreateLayer(f"SpecCreationTest_weak.{fmt}")
+            strongLayer = _CreateLayer(f"SpecCreationTest_strong.{fmt}")
 
             stage = Usd.Stage.Open(weakLayer.identifier)
             p = stage.OverridePrim("/Parent/Nested/Child")
@@ -172,25 +171,43 @@ class TestUsdCreateProperties(unittest.TestCase):
             # 
             # Now, we should be able to set /Parent/Nested/Child.attr in the weaker
             # layer.
-            # 
+            #
             _AssertTrue(
                 strongPrim.GetAttribute("attr1").Set("anyStringValue", 1.0),
-                "Expected to be able to Set <" + str(strongPrim.GetPath())
-                + ".attr1>, but failed.")
+                (
+                    f"Expected to be able to Set <{str(strongPrim.GetPath())}"
+                    + ".attr1>, but failed."
+                ),
+            )
+
             _AssertTrue(
                 strongPrim.GetAttribute("attr2").SetMetadata(
-                    "documentation", "worked!"),
-                "Expected to be able to SetMetadata <" + str(strongPrim.GetPath())
-                + ".attr2>, but failed.")
+                    "documentation", "worked!"
+                ),
+                (
+                    f"Expected to be able to SetMetadata <{str(strongPrim.GetPath())}"
+                    + ".attr2>, but failed."
+                ),
+            )
+
             _AssertTrue(
                 strongPrim.GetRelationship("rel1").AddTarget("/Foo/Bar"),
-                "Expected to be able to AppendTarget to <" + str(strongPrim.GetPath())
-                + ".rel1>, but failed.")
+                (
+                    f"Expected to be able to AppendTarget to <{str(strongPrim.GetPath())}"
+                    + ".rel1>, but failed."
+                ),
+            )
+
             _AssertTrue(
                 strongPrim.GetRelationship("rel2").SetMetadata(
-                    "documentation", "rel worked!"),
-                "Expected to be able to AppendTarget to <" + str(strongPrim.GetPath())
-                + ".rel2>, but failed.")
+                    "documentation", "rel worked!"
+                ),
+                (
+                    f"Expected to be able to AppendTarget to <{str(strongPrim.GetPath())}"
+                    + ".rel2>, but failed."
+                ),
+            )
+
 
             #
             # Finally, attempt to create a new attribute & relationship on a spec in
@@ -225,8 +242,8 @@ class TestUsdCreateProperties(unittest.TestCase):
 
     def test_IsDefined(self):
         for fmt in allFormats:
-            weakLayer = _CreateLayer("IsDefined_weak."+fmt)
-            strongLayer = _CreateLayer("IsDefined_strong."+fmt)
+            weakLayer = _CreateLayer(f"IsDefined_weak.{fmt}")
+            strongLayer = _CreateLayer(f"IsDefined_strong.{fmt}")
 
             stage = Usd.Stage.Open(weakLayer.identifier)
             p = stage.OverridePrim("/Parent")
@@ -256,11 +273,11 @@ class TestUsdCreateProperties(unittest.TestCase):
 
     def test_HasValue(self):
         for fmt in allFormats:
-            tag = 'foo.'+fmt
+            tag = f'foo.{fmt}'
             s = Usd.Stage.CreateInMemory(tag)
             p = s.OverridePrim("/SomePrim")
             p.CreateAttribute("myAttr", Sdf.ValueTypeNames.String)
-            
+
             attr = p.GetAttribute("myAttr")
             assert not attr.HasValue()
             assert not attr.HasAuthoredValue()
@@ -280,7 +297,7 @@ class TestUsdCreateProperties(unittest.TestCase):
             attr.ClearAtTime(1.0)
             assert not attr.HasValue()
             assert not attr.HasAuthoredValue()
-            
+
             attr.Set("val", 1.0)
             assert attr.HasValue()
             assert attr.HasAuthoredValue()
@@ -311,7 +328,7 @@ class TestUsdCreateProperties(unittest.TestCase):
             return
 
         for fmt in allFormats:
-            s = Usd.Stage.CreateInMemory('GetSetNumpyTest.'+fmt)
+            s = Usd.Stage.CreateInMemory(f'GetSetNumpyTest.{fmt}')
             prim = s.OverridePrim('/test')
             prim.CreateAttribute('extent', Sdf.ValueTypeNames.Float3Array)
 
@@ -331,7 +348,7 @@ class TestUsdCreateProperties(unittest.TestCase):
     def test_SetArraysWithLists(self):
         from pxr import Vt, Sdf
         for fmt in allFormats:
-            s = Usd.Stage.CreateInMemory('SetArraysWithListsTest.'+fmt)
+            s = Usd.Stage.CreateInMemory(f'SetArraysWithListsTest.{fmt}')
             prim = s.OverridePrim('/test')
             strs = prim.CreateAttribute('strs', Sdf.ValueTypeNames.StringArray)
             toks = prim.CreateAttribute('toks', Sdf.ValueTypeNames.TokenArray)
@@ -408,7 +425,7 @@ class TestUsdCreateProperties(unittest.TestCase):
         # Per bug/93381, make sure property foo only has basic metadata
         myFoo = prim.GetRelationship('foo')
         self.assertEqual(len(myFoo.GetAllMetadata()), 2)
-        
+
         # and make sure "simple" names behave
         graphica = prim.GetRelationship('graphica')
         self.assertTrue(graphica)
@@ -419,16 +436,16 @@ class TestUsdCreateProperties(unittest.TestCase):
     def test_Namespaces(self):
         print("Testing namespaces in memory...")
         for fmt in allFormats:
-            self._NamespacesTestRun(Usd.Stage.CreateInMemory('tag.'+fmt))
+            self._NamespacesTestRun(Usd.Stage.CreateInMemory(f'tag.{fmt}'))
         print("Testing namespaces in binary file...")
         for fmt in allFormats:
-            self._NamespacesTestRun(Usd.Stage.CreateNew("namespaceTest."+fmt))
+            self._NamespacesTestRun(Usd.Stage.CreateNew(f"namespaceTest.{fmt}"))
 
     def test_Downcast(self):
         # Check that wrapped API returning UsdProperty actually produces
         # UsdAttribute and UsdRelationship instances.
         for fmt in allFormats:
-            s = Usd.Stage.CreateInMemory('tag.'+fmt)
+            s = Usd.Stage.CreateInMemory(f'tag.{fmt}')
             p = s.DefinePrim('/p')
             a = p.CreateAttribute('a', Sdf.ValueTypeNames.Float)
             r = p.CreateRelationship('r')
@@ -442,8 +459,7 @@ class TestUsdCreateProperties(unittest.TestCase):
         import os
 
         for fmt in allFormats:
-            with Tf.NamedTemporaryFile(suffix='.'+fmt) as rootFile, \
-                 Tf.NamedTemporaryFile(suffix='.'+fmt) as targetFile:
+            with Tf.NamedTemporaryFile(suffix=f'.{fmt}') as rootFile, Tf.NamedTemporaryFile(suffix=f'.{fmt}') as targetFile:
 
                 self.assertEqual(os.path.split(rootFile.name)[0],
                                  os.path.split(targetFile.name)[0])
@@ -458,7 +474,7 @@ class TestUsdCreateProperties(unittest.TestCase):
                 singleAssetQuery = Usd.AttributeQuery(foo, 'singleAsset')
                 arrayAssetQuery = Usd.AttributeQuery(foo, 'arrayAsset')
 
-                relPath = './' + os.path.split(targetFile.name)[1]
+                relPath = f'./{os.path.split(targetFile.name)[1]}'
                 relPathArray = Sdf.AssetPathArray(42, [relPath])
 
                 self.assertNotEqual(relPath, targetFile.name)
@@ -472,7 +488,7 @@ class TestUsdCreateProperties(unittest.TestCase):
                 arrayAssetQueryValue = arrayAssetQuery.Get()
 
                 self.assertEqual(singleAssetValue.path, relPath)
-                self.assertTrue(all([ap.path == relPath for ap in arrayAssetValue]))
+                self.assertTrue(all(ap.path == relPath for ap in arrayAssetValue))
 
                 # Ensure that attribute query also resolves paths
                 self.assertEqual(singleAssetValue.path, singleAssetQueryValue.path)
@@ -484,9 +500,14 @@ class TestUsdCreateProperties(unittest.TestCase):
                 #       forward slash directory separators to backslashes.
                 self.assertEqual(os.path.normcase(singleAssetValue.resolvedPath), 
                                  os.path.normcase(targetFile.name))
-                self.assertTrue(all([os.path.normcase(ap.resolvedPath) == 
-                                     os.path.normcase(targetFile.name)
-                                for ap in arrayAssetValue]))
+                self.assertTrue(
+                    all(
+                        os.path.normcase(ap.resolvedPath)
+                        == os.path.normcase(targetFile.name)
+                        for ap in arrayAssetValue
+                    )
+                )
+
                 self.assertEqual(singleAssetValue.resolvedPath, 
                             singleAssetQueryValue.resolvedPath)
                 self.assertEqual([ap.resolvedPath for ap in arrayAssetValue],
@@ -501,9 +522,9 @@ class TestUsdCreateProperties(unittest.TestCase):
                 singleAssetValue = singleAsset.Get()
                 arrayAssetValue = arrayAsset.Get()
                 self.assertEqual(singleAssetValue.path, relPath)
-                self.assertTrue(all([ap.path == relPath for ap in arrayAssetValue]))
+                self.assertTrue(all(ap.path == relPath for ap in arrayAssetValue))
                 self.assertEqual(singleAssetValue.resolvedPath, '')
-                self.assertTrue(all([ap.resolvedPath == '' for ap in arrayAssetValue]))
+                self.assertTrue(all(ap.resolvedPath == '' for ap in arrayAssetValue))
 
                 # NOTE: rootFile will want to delete the underlying file
                 #       on __exit__ from the context manager.  But stage s
@@ -519,14 +540,14 @@ class TestUsdCreateProperties(unittest.TestCase):
 
         # Test basic overs
         for fmt in allFormats:
-            layerA = _CreateLayer('layerA.'+fmt)
-            layerB = _CreateLayer('layerB.'+fmt)
-            layerC = _CreateLayer('layerC.'+fmt)
+            layerA = _CreateLayer(f'layerA.{fmt}')
+            layerB = _CreateLayer(f'layerB.{fmt}')
+            layerC = _CreateLayer(f'layerC.{fmt}')
 
             stage = Usd.Stage.Open(layerA.identifier)
             prim = stage.DefinePrim(primPath)
             prim.CreateAttribute(propName, Sdf.ValueTypeNames.String)
-            
+
             stage = Usd.Stage.Open(layerB.identifier)
             over = stage.OverridePrim(primPath)
             over.CreateAttribute(propName, Sdf.ValueTypeNames.String)
@@ -551,12 +572,12 @@ class TestUsdCreateProperties(unittest.TestCase):
     def test_GetPropertyStackWithClips(self):
         clipPath = '/root/fx/test'
         attrName = 'extent'
-        fullPath = clipPath + '.' + attrName
+        fullPath = f'{clipPath}.{attrName}'
 
         for fmt in allFormats:
-            clipA = Sdf.Layer.CreateNew('clipA.'+fmt)
-            clipB = Sdf.Layer.CreateNew('clipB.'+fmt)
-            clipC = Sdf.Layer.CreateNew('clipC.'+fmt)
+            clipA = Sdf.Layer.CreateNew(f'clipA.{fmt}')
+            clipB = Sdf.Layer.CreateNew(f'clipB.{fmt}')
+            clipC = Sdf.Layer.CreateNew(f'clipC.{fmt}')
             clips = [clipA, clipB, clipC]
 
             clipTime = 102.0
@@ -570,19 +591,19 @@ class TestUsdCreateProperties(unittest.TestCase):
                 stage.SetEndTimeCode(clipTime)
 
             # Generate our necessary topology layer
-            topologyLayer = Sdf.Layer.CreateNew('root.topology.'+fmt)
+            topologyLayer = Sdf.Layer.CreateNew(f'root.topology.{fmt}')
             stage = Usd.Stage.Open(topologyLayer)
             prim = stage.DefinePrim(clipPath)
             prim.CreateAttribute(attrName, Sdf.ValueTypeNames.Double)
 
             # Generate our necessary clip metadata
-            root  = Sdf.Layer.CreateNew('root.'+fmt)
+            root = Sdf.Layer.CreateNew(f'root.{fmt}')
             stage = Usd.Stage.Open(root)
             prim  = stage.DefinePrim(clipPath)
             clipPrim = Usd.ClipsAPI(prim)
             clipPrim.SetClipAssetPaths([Sdf.AssetPath(c.identifier) for c in clips])
             clipPrim.SetClipPrimPath(clipPath)
-            clipPrim.SetClipManifestAssetPath('root.topology.'+fmt)
+            clipPrim.SetClipManifestAssetPath(f'root.topology.{fmt}')
 
             # Add a reference to our topology layer
             rootPath = Sdf.Path('/root')
@@ -607,21 +628,22 @@ class TestUsdCreateProperties(unittest.TestCase):
             stage = Usd.Stage.Open(root.identifier)
             prim = stage.GetPrimAtPath(clipPath)
             attr = prim.GetAttribute(attrName)
-        
+
             # Ensure we only pick up relevant clips
             # In the case of a default time code we don't want any of the
             # value clips to show up in our stack of properties
             stack = attr.GetPropertyStack(Usd.TimeCode.Default())
             self.assertEqual(stack, [topologyLayer.GetPropertyAtPath(fullPath)])
 
-            # ensure that clip 'c' is in the result when the time code 
-            # being used is exactly on 'c's endpoints
-            clipTime = 102
-            for i in range(0, len(clips)):
+            for clipTime, clip in enumerate(clips, start=102):
                 stack = attr.GetPropertyStack(clipTime)
-                self.assertEqual(stack, [clips[i].GetPropertyAtPath(fullPath),
-                                    topologyLayer.GetPropertyAtPath(fullPath)])
-                clipTime += 1
+                self.assertEqual(
+                    stack,
+                    [
+                        clip.GetPropertyAtPath(fullPath),
+                        topologyLayer.GetPropertyAtPath(fullPath),
+                    ],
+                )
 
 if __name__ == "__main__":
     unittest.main()

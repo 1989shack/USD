@@ -45,19 +45,18 @@ def _ConfigureAssetResolver(args, resolver):
     if _HasConfigureResolverForAsset():
         configurePath = args.configureAssetPath or args.inputPath
         resolver.ConfigureResolverForAsset(configurePath)
-    else:
-        if args.createContextForAsset:
-            return resolver.CreateDefaultContextForAsset(
-                args.createContextForAsset)
-        elif args.createContextFromString:
-            configStrs = []
-            for s in args.createContextFromString:
-                try:
-                    uriScheme, config = s.split(":", 1)
-                    configStrs.append((uriScheme, config))
-                except ValueError:
-                    configStrs.append(("", s))
-            return resolver.CreateContextFromStrings(configStrs)
+    elif args.createContextForAsset:
+        return resolver.CreateDefaultContextForAsset(
+            args.createContextForAsset)
+    elif args.createContextFromString:
+        configStrs = []
+        for s in args.createContextFromString:
+            try:
+                uriScheme, config = s.split(":", 1)
+                configStrs.append((uriScheme, config))
+            except ValueError:
+                configStrs.append(("", s))
+        return resolver.CreateContextFromStrings(configStrs)
 
     return resolver.CreateDefaultContextForAsset(args.inputPath)
 
@@ -107,7 +106,7 @@ def main():
         parser.add_argument(
             '--anchorPath',
             help="Run AnchorRelativePath on the given asset path.")
-        
+
 
     args = parser.parse_args()
 
@@ -129,7 +128,7 @@ def main():
         exitCode = 1
     else:
         print(resolved)
-    
+
     return exitCode
 
 if __name__ == "__main__":

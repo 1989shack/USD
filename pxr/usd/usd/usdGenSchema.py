@@ -129,7 +129,7 @@ def _SanitizeDoc(doc, leader):
     """
     if doc is None:
         return ''
-    
+
     return leader.join([line.lstrip() for line in doc.split('\n')])
 
 
@@ -141,33 +141,30 @@ def _GetDefiningLayerAndPrim(stage, schemaName):
     """ Searches the stage LayerStack for a prim whose name is equal to
         schemaName.
     """
-    # SchemaBase is not actually defined in the core schema file, but this
-    # behavior causes the code generator to produce correct C++ inheritance.
     if schemaName == 'SchemaBase':
         return (stage.GetLayerStack()[-1], None)
-    
-    else:
-        for layer in stage.GetLayerStack():
-            for sdfPrim in layer.rootPrims:
-                if sdfPrim.name == schemaName:
-                    return (layer, sdfPrim)
 
-    raise Exception("Could not find the defining layer for schema: %s" % schemaName)
+    for layer in stage.GetLayerStack():
+        for sdfPrim in layer.rootPrims:
+            if sdfPrim.name == schemaName:
+                return (layer, sdfPrim)
+
+    raise Exception(f"Could not find the defining layer for schema: {schemaName}")
                     
 
 def _GetLibMetadata(layer):
     """ Return a dictionary of library-specific data found in layer."""
-    
+
     globalPrim = layer.GetPrimAtPath('/GLOBAL')
     if not globalPrim:
         raise Exception("Code generation requires a \"/GLOBAL\" prim with "
             "customData to define at least libraryName. GLOBAL prim not found.")
-    
+
     if not globalPrim.customData:
         raise Exception("customData is either empty or not defined on /GLOBAL "
             "prim. At least \"libraryName\" entries in customData are required "
             "for code generation.")
-    
+
     # Return a copy of customData to avoid accessing an invalid map proxy during
     # template rendering.
     return dict(globalPrim.customData)
@@ -175,7 +172,7 @@ def _GetLibMetadata(layer):
 
 def _GetLibName(layer):
     """ Return the libraryName defined in layer."""
-    
+
     libData = _GetLibMetadata(layer)
     if 'libraryName' not in libData:
         raise Exception("Code generation requires that \"libraryName\" be defined "
@@ -250,10 +247,7 @@ def _SkipCodeGenForSchemaLib(stage):
     should be skipped for its schemas and therefore for the the entire schema
     library."""
 
-    for layer in stage.GetLayerStack():
-        if _SkipCodeGenForLayer(layer):
-            return True
-    return False
+    return any(_SkipCodeGenForLayer(layer) for layer in stage.GetLayerStack())
     
 def _UpperCase(aString):
     return aString.upper()
@@ -278,11 +272,10 @@ def _CamelCase(aString):
     """Returns the given string (camelCase or ProperCase) in camelCase,
         stripping out any non-alphanumeric characters.
     """
-    if len(aString) > 1:
-        pcase = _ProperCase(aString)
-        return pcase[0].lower() + pcase[1:]
-    else:
+    if len(aString) <= 1:
         return aString.lower()
+    pcase = _ProperCase(aString)
+    return pcase[0].lower() + pcase[1:]
 
     
 Token = namedtuple('Token', ['id', 'value', 'desc'])
@@ -371,7 +364,7 @@ class AttrInfo(PropInfo):
     def __init__(self, sdfProp, classInfo):
         super(AttrInfo, self).__init__(sdfProp, classInfo)
         self.allowedTokens = sdfProp.GetInfo('allowedTokens')
-        
+
         self.variability = str(sdfProp.variability).replace('Sdf.', 'Sdf')
         self.fallback = sdfProp.default
         self.typeName = sdfProp.typeName
@@ -384,21 +377,20 @@ class AttrInfo(PropInfo):
                         "Sdf.ValueTypeNames.)"
                         % (sdfProp.path, sdfProp.typeName), sdfProp.path)
         else:
-            self.usdType = "SdfValueTypeNames->%s" % (
-                valueTypeNameToStr[sdfProp.typeName])
+            self.usdType = f"SdfValueTypeNames->{valueTypeNameToStr[sdfProp.typeName]}"
 
         self.details = [
-            ('Declaration', '`%s`' % _GetAttrDeclaration(sdfProp)),
+            ('Declaration', f'`{_GetAttrDeclaration(sdfProp)}`'),
             ('C++ Type', self.typeName.cppTypeName),
             ('\\ref Usd_Datatypes "Usd Type"', self.usdType),
         ]
+
 
         if self.variability == "SdfVariabilityUniform":
             self.details.append(('\\ref SdfVariability "Variability"', self.variability))
 
         if self.allowedTokens:
-            tokenListStr = ', '.join(
-                [x if x else '""' for x in self.allowedTokens])
+            tokenListStr = ', '.join([x or '""' for x in self.allowedTokens])
             self.details.append(('\\ref ' + \
                 _GetTokensPrefix(sdfProp.layer) + \
                 'Tokens "Allowed Values"', tokenListStr))
@@ -439,18 +431,17 @@ def _IsTyped(p):
 class ClassInfo(object):
     def __init__(self, usdPrim, sdfPrim, useLiteralIdentifier=False):
         # First validate proper class naming...
-        if (sdfPrim.typeName != sdfPrim.path.name and
-            sdfPrim.typeName != ''):
+        if sdfPrim.typeName not in [sdfPrim.path.name, '']:
             raise _GetSchemaDefException(
                 "Code generation requires that every instantiable "
                 "class's name must match its declared type "
                 "('%s' and '%s' do not match.)" % 
                 (sdfPrim.typeName, sdfPrim.path.name), sdfPrim.path)
-        
+
         # NOTE: usdPrim should ONLY be used for querying information regarding
         # the class's parent in order to avoid duplicating class members during
         # code generation.
-        inherits = usdPrim.GetMetadata('inheritPaths') 
+        inherits = usdPrim.GetMetadata('inheritPaths')
         inheritsList = _ListOpToList(inherits)
 
         # We do not allow multiple inheritance 
@@ -509,7 +500,7 @@ class ClassInfo(object):
         # Extra Class Metadata
         self.doc = _SanitizeDoc(sdfPrim.documentation, '\n/// ')
         self.typeName = sdfPrim.typeName
-        self.extraIncludes = self.customData.get('extraIncludes', None)
+        self.extraIncludes = self.customData.get('extraIncludes')
 
         # Built-in API schemas metadata.
         #
@@ -528,15 +519,18 @@ class ClassInfo(object):
         # them as a prepend. I.e. schema types can only add additional applied
         # API schemas that will be stronger then any inherited built-in API
         # schemas from parent classes.
-        if self.apiSchemasMetadata != Sdf.TokenListOp():
-            if (self.apiSchemasMetadata.isExplicit or
-                    self.apiSchemasMetadata.addedItems or
-                    self.apiSchemasMetadata.deletedItems or
-                    self.apiSchemasMetadata.explicitItems or
-                    self.apiSchemasMetadata.orderedItems) :
-                raise _GetSchemaDefException(
-                    "The 'apiSchemas' metadata list operation is only allowed "
-                    "to prepend API schemas.", sdfPrim.path)
+        if self.apiSchemasMetadata != Sdf.TokenListOp() and (
+            (
+                self.apiSchemasMetadata.isExplicit
+                or self.apiSchemasMetadata.addedItems
+                or self.apiSchemasMetadata.deletedItems
+                or self.apiSchemasMetadata.explicitItems
+                or self.apiSchemasMetadata.orderedItems
+            )
+        ):
+            raise _GetSchemaDefException(
+                "The 'apiSchemas' metadata list operation is only allowed "
+                "to prepend API schemas.", sdfPrim.path)
 
         # Do not to inherit the type name of parent classes.
         if inherits:
@@ -562,7 +556,7 @@ class ClassInfo(object):
         self.apiAllowedInstanceNames = self.customData.get(
             API_ALLOWED_INSTANCE_NAMES)
         self.apiSchemaInstances = self.customData.get(API_SCHEMA_INSTANCES)
-                               
+
         if self.apiSchemaType != MULTIPLE_APPLY:
             if self.propertyNamespacePrefix:
                 raise _GetSchemaDefException(
@@ -605,9 +599,9 @@ class ClassInfo(object):
 
         if self.isApi and not self.isAppliedAPISchema:
             self.schemaKind = "nonAppliedAPI";
-        elif self.isApi and self.isAppliedAPISchema and not self.isMultipleApply:
+        elif self.isApi and not self.isMultipleApply:
             self.schemaKind = "singleApplyAPI"
-        elif self.isApi and self.isAppliedAPISchema and self.isMultipleApply:
+        elif self.isApi:
             self.schemaKind = "multipleApplyAPI"
         elif self.isConcrete and self.isTyped:
             self.schemaKind = "concreteTyped"
@@ -615,7 +609,7 @@ class ClassInfo(object):
             self.schemaKind = "abstractTyped"
         else:
             self.schemaKind = "abstractBase"
-        self.schemaKindEnumValue = "UsdSchemaKind::" + _ProperCase(self.schemaKind)
+        self.schemaKindEnumValue = f"UsdSchemaKind::{_ProperCase(self.schemaKind)}"
 
         if self.isConcrete and not self.isTyped:
             raise _GetSchemaDefException('Schema classes must either inherit '
@@ -628,7 +622,7 @@ class ClassInfo(object):
             raise _GetSchemaDefException(
                         'API schemas must be named with an API suffix.', 
                         sdfPrim.path)
-        
+
         if self.isApi and sdfPrim.path.name != "APISchemaBase" and \
                 self.parentCppClassName != "UsdAPISchemaBase":
             if self.isAppliedAPISchema: 
@@ -646,23 +640,23 @@ class ClassInfo(object):
             raise _GetSchemaDefException(
                 'Non API schemas cannot have non-empty apiSchemaType value.', 
                 sdfPrim.path)
-        
+
         if self.fallbackPrimTypes and not self.isConcrete:
             raise _GetSchemaDefException(
                 "fallbackPrimTypes can only be used as a customData field on "
                 "concrete typed schema classes", sdfPrim.path)
 
     def GetHeaderFile(self):
-        return self.baseFileName + '.h'
+        return f'{self.baseFileName}.h'
 
     def GetParentHeaderFile(self):
-        return self.parentBaseFileName + '.h'
+        return f'{self.parentBaseFileName}.h'
 
     def GetCppFile(self):
-        return self.baseFileName + '.cpp'
+        return f'{self.baseFileName}.cpp'
 
     def GetWrapFile(self):
-        return 'wrap' + self.className + '.cpp'
+        return f'wrap{self.className}.cpp'
 
 
 #------------------------------------------------------------------------------#
@@ -692,10 +686,7 @@ def _ValidateFields(spec):
     return False
 
 def GetClassInfo(classes, cppClassName):
-    for c in classes:
-        if c.cppClassName == cppClassName:
-            return c
-    return None
+    return next((c for c in classes if c.cppClassName == cppClassName), None)
 
 def _MakeMultipleApplySchemaNameTemplate(apiSchemaName):
     # Multiple apply API schemas are allowed to specify other built-in 

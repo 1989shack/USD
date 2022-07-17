@@ -25,10 +25,10 @@
 import sys, unittest
 from pxr import Sdf, Tf, Usd
 
-allFormats = ['usd' + x for x in 'ac']
+allFormats = [f'usd{x}' for x in 'ac']
 
 def _CreateStage(fmt):
-    s = Usd.Stage.CreateInMemory('_CreateStage.'+fmt)
+    s = Usd.Stage.CreateInMemory(f'_CreateStage.{fmt}')
     s.GetRootLayer().ImportFromString('''#usda 1.0
         def Scope "Foo"
         {
@@ -82,48 +82,93 @@ class TestUsdAttributeConnections(unittest.TestCase):
         recursive = stage.GetPrimAtPath("/Recursive")
         self.assertEqual(
             set(recursive.FindAllAttributeConnectionPaths()),
-            set([Sdf.Path('/Recursive/A'), Sdf.Path('/Recursive/B'),
-                 Sdf.Path('/Recursive/C'), Sdf.Path('/Recursive/D'),
-                 Sdf.Path('/Recursive/D/A'), Sdf.Path('/Recursive/D/B'),
-                 Sdf.Path('/Recursive/D/C'), Sdf.Path('/Recursive/D/D')]))
+            {
+                Sdf.Path('/Recursive/A'),
+                Sdf.Path('/Recursive/B'),
+                Sdf.Path('/Recursive/C'),
+                Sdf.Path('/Recursive/D'),
+                Sdf.Path('/Recursive/D/A'),
+                Sdf.Path('/Recursive/D/B'),
+                Sdf.Path('/Recursive/D/C'),
+                Sdf.Path('/Recursive/D/D'),
+            },
+        )
+
 
         self.assertEqual(
-            set(recursive.FindAllAttributeConnectionPaths(
-                predicate =
-                lambda attr: attr.GetPrim().GetName() in ('B', 'D'))),
-            set([Sdf.Path('/Recursive/A'), Sdf.Path('/Recursive/C'),
-                 Sdf.Path('/Recursive/D/A'), Sdf.Path('/Recursive/D/C')]))
+            set(
+                recursive.FindAllAttributeConnectionPaths(
+                    predicate=lambda attr: attr.GetPrim().GetName() in ('B', 'D')
+                )
+            ),
+            {
+                Sdf.Path('/Recursive/A'),
+                Sdf.Path('/Recursive/C'),
+                Sdf.Path('/Recursive/D/A'),
+                Sdf.Path('/Recursive/D/C'),
+            },
+        )
+
 
         self.assertEqual(
-            set(recursive.FindAllAttributeConnectionPaths(
-                predicate =
-                lambda attr: attr.GetPrim().GetName() in ('A', 'C'))),
-            set([Sdf.Path('/Recursive/B'), Sdf.Path('/Recursive/D'),
-                 Sdf.Path('/Recursive/D/B'), Sdf.Path('/Recursive/D/D')]))
-                
+            set(
+                recursive.FindAllAttributeConnectionPaths(
+                    predicate=lambda attr: attr.GetPrim().GetName() in ('A', 'C')
+                )
+            ),
+            {
+                Sdf.Path('/Recursive/B'),
+                Sdf.Path('/Recursive/D'),
+                Sdf.Path('/Recursive/D/B'),
+                Sdf.Path('/Recursive/D/D'),
+            },
+        )
+
+
         recursiveA = stage.GetPrimAtPath("/Recursive/A")
-        self.assertEqual(set(recursiveA.FindAllAttributeConnectionPaths()),
-                    set([Sdf.Path('/Recursive/B')]))
-            
-        self.assertEqual(set(
-            recursiveA.FindAllAttributeConnectionPaths(recurseOnSources=True)),
-            set([Sdf.Path('/Recursive/A'), Sdf.Path('/Recursive/B'),
-                 Sdf.Path('/Recursive/C'), Sdf.Path('/Recursive/D'),
-                 Sdf.Path('/Recursive/D/A'), Sdf.Path('/Recursive/D/B'),
-                 Sdf.Path('/Recursive/D/C'), Sdf.Path('/Recursive/D/D')]))
+        self.assertEqual(
+            set(recursiveA.FindAllAttributeConnectionPaths()),
+            {Sdf.Path('/Recursive/B')},
+        )
 
-        self.assertEqual(set(
-            recursiveA.FindAllAttributeConnectionPaths(
-                recurseOnSources=True,
-                predicate=lambda attr: attr.GetPrim().GetParent().GetName() ==
-                'Recursive' or attr.GetPrim().GetName() in ('A', 'C'))),
-            set([Sdf.Path('/Recursive/A'), Sdf.Path('/Recursive/B'),
-                 Sdf.Path('/Recursive/C'), Sdf.Path('/Recursive/D'),
-                 Sdf.Path('/Recursive/D/B'), Sdf.Path('/Recursive/D/D')]))
+
+        self.assertEqual(
+            set(recursiveA.FindAllAttributeConnectionPaths(recurseOnSources=True)),
+            {
+                Sdf.Path('/Recursive/A'),
+                Sdf.Path('/Recursive/B'),
+                Sdf.Path('/Recursive/C'),
+                Sdf.Path('/Recursive/D'),
+                Sdf.Path('/Recursive/D/A'),
+                Sdf.Path('/Recursive/D/B'),
+                Sdf.Path('/Recursive/D/C'),
+                Sdf.Path('/Recursive/D/D'),
+            },
+        )
+
+
+        self.assertEqual(
+            set(
+                recursiveA.FindAllAttributeConnectionPaths(
+                    recurseOnSources=True,
+                    predicate=lambda attr: attr.GetPrim().GetParent().GetName()
+                    == 'Recursive'
+                    or attr.GetPrim().GetName() in ('A', 'C'),
+                )
+            ),
+            {
+                Sdf.Path('/Recursive/A'),
+                Sdf.Path('/Recursive/B'),
+                Sdf.Path('/Recursive/C'),
+                Sdf.Path('/Recursive/D'),
+                Sdf.Path('/Recursive/D/B'),
+                Sdf.Path('/Recursive/D/D'),
+            },
+        )
 
     def test_ConnectionsInInstances(self):
         for fmt in allFormats:
-            s = Usd.Stage.CreateInMemory('TestConnectionsInInstances.'+fmt)
+            s = Usd.Stage.CreateInMemory(f'TestConnectionsInInstances.{fmt}')
             s.GetRootLayer().ImportFromString('''#usda 1.0
             def Scope "Ref"
             {
@@ -177,8 +222,7 @@ class TestUsdAttributeConnections(unittest.TestCase):
 
     def test_ConnectionsToObjectsInInstances(self):
         for fmt in allFormats:
-            stage = Usd.Stage.CreateInMemory(
-                'TestConnectionsToObjectsInInstances.'+fmt)
+            stage = Usd.Stage.CreateInMemory(f'TestConnectionsToObjectsInInstances.{fmt}')
             stage.GetRootLayer().ImportFromString('''#usda 1.0
                 def "Instance"
                 {
@@ -376,7 +420,7 @@ class TestUsdAttributeConnections(unittest.TestCase):
 
     def test_AuthoringConnections(self):
         for fmt in allFormats:
-            stage = Usd.Stage.CreateInMemory("testAuthoringConnections." + fmt)
+            stage = Usd.Stage.CreateInMemory(f"testAuthoringConnections.{fmt}")
 
             prim = stage.DefinePrim("/Test")
             attr = prim.CreateAttribute("attr", Sdf.ValueTypeNames.Int)
@@ -438,8 +482,7 @@ class TestUsdAttributeConnections(unittest.TestCase):
 
     def test_ConnectionsWithInconsistentSpecs(self):
         for fmt in allFormats:
-            stage = Usd.Stage.CreateInMemory(
-                'TestConnectionsWithInconsistentSpecs.'+fmt)
+            stage = Usd.Stage.CreateInMemory(f'TestConnectionsWithInconsistentSpecs.{fmt}')
             stage.GetRootLayer().ImportFromString('''#usda 1.0
                 def "A"
                 {

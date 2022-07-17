@@ -46,7 +46,7 @@ def main():
     # Make sure the model-parents we need are well-specified
     Usd.ModelAPI(UsdGeom.Xform.Define(stage, '/World')).SetKind(Kind.Tokens.group)
     Usd.ModelAPI(UsdGeom.Xform.Define(stage, '/World/sets')).SetKind(Kind.Tokens.group)
-    
+
     # in previous examples, we've been using GetReferences().AddReference(...).  The
     # following uses .SetItems() instead which lets us explicitly set (replace)
     # the references at once instead of adding.
@@ -56,8 +56,8 @@ def main():
     stage.GetEditTarget().GetLayer().Save()
 
     print('===')
-    print('usdview %s' % sequenceFilePath)
-    print('usdcat %s' % setsLayoutLayerFilePath)
+    print(f'usdview {sequenceFilePath}')
+    print(f'usdcat {setsLayoutLayerFilePath}')
 
 if __name__ == '__main__':
     main()

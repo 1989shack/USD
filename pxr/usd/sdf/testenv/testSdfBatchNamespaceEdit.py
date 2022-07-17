@@ -123,7 +123,7 @@ class TestSdfBatchNamespaceEdit(unittest.TestCase):
         def CheckFail(result, description):
             if verbose:
                 if result[0]:
-                    print("Unexpected success: %s" % description)
+                    print(f"Unexpected success: {description}")
                 else:
                     print("%40s: [%s]" % (description, '.'.join([str(x) for x in result[1]])))
             self.assertFalse(result[0])

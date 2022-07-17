@@ -38,7 +38,7 @@ import sys
 import py_compile
 
 if len(sys.argv) < 4:
-    print("Usage: {} src.py file.py file.pyc".format(sys.argv[0]))
+    print(f"Usage: {sys.argv[0]} src.py file.py file.pyc")
     sys.exit(1)
 
 try:
@@ -55,14 +55,12 @@ except py_compile.PyCompileError as compileError:
         try:
             linenumber = exc_value[1][1]
             line = exc_value[1][3]
-            print('{}:{}: {}: "{}"'.format(sys.argv[1], linenumber, error, line))
+            print(f'{sys.argv[1]}:{linenumber}: {error}: "{line}"')
         except IndexError:
-            print('{}: Syntax error: "{}"'.format(sys.argv[1], error))
+            print(f'{sys.argv[1]}: Syntax error: "{error}"')
     else:
-        print("{}: Unhandled compile error: ({}) {}".format(
-            sys.argv[1], compileError.exc_type_name, exc_value))
-    sys.exit(1)
-except:
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    print("{}: Unhandled exception: {}".format(sys.argv[1], exc_value))
+        print(
+            f"{sys.argv[1]}: Unhandled compile error: ({compileError.exc_type_name}) {exc_value}"
+        )
+
     sys.exit(1)

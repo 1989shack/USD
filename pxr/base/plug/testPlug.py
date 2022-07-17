@@ -30,10 +30,10 @@ from pxr import Plug, Tf, Gf
 
 # Test plugins are installed relative to this script
 testRoot = os.path.join(os.path.dirname(__file__), 'PlugPlugins')
-testPluginsDso = testRoot + '/lib'
-testPluginsPython = testRoot + '/lib/python'
-testPluginsDsoSearch = testPluginsDso + '/*/Resources/'
-testPluginsPythonSearch = testPluginsPython + '/**/'
+testPluginsDso = f'{testRoot}/lib'
+testPluginsPython = f'{testRoot}/lib/python'
+testPluginsDsoSearch = f'{testPluginsDso}/*/Resources/'
+testPluginsPythonSearch = f'{testPluginsPython}/**/'
 
 # Append the sys.path so that we will be able to load python plugins
 sys.path.append(testPluginsPython)
@@ -94,21 +94,40 @@ class TestPlug(unittest.TestCase):
     def test_Registration(self):
         # Verify we received the appropriate notification
         self.assertEqual(self.listener1.numReceived, 1)
-        self.assertEqual(set([p.name for p in self.listener1.newPlugins]),
-                    set(['TestPlugDso1', 'TestPlugDso2', 'TestPlugDso3', 
-                        'TestPlugDsoUnloadable']))
+        self.assertEqual(
+            {p.name for p in self.listener1.newPlugins},
+            {
+                'TestPlugDso1',
+                'TestPlugDso2',
+                'TestPlugDso3',
+                'TestPlugDsoUnloadable',
+            },
+        )
+
 
         # Verify we received the appropriate notification
         self.assertEqual(self.listener2.numReceived, 2)
-        self.assertEqual(set([p.name for p in self.listener2.newPlugins]),
-                    set(['TestPlugDso1', 'TestPlugDso2', 'TestPlugDso3', 
-                        'TestPlugDsoUnloadable',
-                        'TestPlugModule1', 'TestPlugModule2', 'TestPlugModule3',
-                        'TestPlugModuleDepBadBase', 'TestPlugModuleDepBadDep',
-                        'TestPlugModuleDepBadDep2', 'TestPlugModuleDepBadLoad',
-                        'TestPlugModuleDepCycle', 
-                        'TestPlugModuleLoaded', 'TestPlugModuleLoadedBadBase',
-                        'TestPlugModuleUnloadable']))
+        self.assertEqual(
+            {p.name for p in self.listener2.newPlugins},
+            {
+                'TestPlugDso1',
+                'TestPlugDso2',
+                'TestPlugDso3',
+                'TestPlugDsoUnloadable',
+                'TestPlugModule1',
+                'TestPlugModule2',
+                'TestPlugModule3',
+                'TestPlugModuleDepBadBase',
+                'TestPlugModuleDepBadDep',
+                'TestPlugModuleDepBadDep2',
+                'TestPlugModuleDepBadLoad',
+                'TestPlugModuleDepCycle',
+                'TestPlugModuleLoaded',
+                'TestPlugModuleLoadedBadBase',
+                'TestPlugModuleUnloadable',
+            },
+        )
+
 
         # Check available subclasses of TestPlugBase<1>
         base1Subclasses = Tf.Type.FindByName('_TestPlugBase<1>').GetAllDerivedTypes()
@@ -274,12 +293,12 @@ class TestPlug(unittest.TestCase):
         self.assertEqual(listener.numReceived, 0)
 
         # try to register an incomplete plugin
-        badPluginPath = testPluginsDso + '/TestPlugDsoIncomplete.framework/Resources/'
+        badPluginPath = f'{testPluginsDso}/TestPlugDsoIncomplete.framework/Resources/'
         Plug.Registry().RegisterPlugins(badPluginPath)
         self.assertEqual(listener.numReceived, 0)
 
         # try to register an incomplete python plugin path
-        badPluginPath = testPluginsPython + '/TestPlugModuleIncomplete'
+        badPluginPath = f'{testPluginsPython}/TestPlugModuleIncomplete'
         Plug.Registry().RegisterPlugins(badPluginPath)
         self.assertEqual(listener.numReceived, 0)
 

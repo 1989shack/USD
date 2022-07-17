@@ -137,7 +137,9 @@ def CheckExpressionPath(path, path2, parentPath, pathStr, pathElems):
 
 def CheckOrdering(*args):
     for i in range(len(args)-1):
-        assert args[i] < args[i+1], "Expected <%s> to compare less-than <%s>, but it did not"%(args[i], args[i+1])
+        assert (
+            args[i] < args[i + 1]
+        ), f"Expected <{args[i]}> to compare less-than <{args[i+1]}>, but it did not"
     
 class TestSdfPath2(unittest.TestCase):
     def test_Basic(self):

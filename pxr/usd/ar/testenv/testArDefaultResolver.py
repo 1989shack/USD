@@ -215,7 +215,7 @@ class TestArDefaultResolver(unittest.TestCase):
         testFilePath = os.path.join(testDir, testFileName) 
         with open(testFilePath, 'w') as ofp:
             print('Garbage', file=ofp)
-        
+
         resolver = Ar.GetResolver()
 
         self.assertPathsEqual(
@@ -274,12 +274,12 @@ class TestArDefaultResolver(unittest.TestCase):
         if os.path.isdir(testDir):
             shutil.rmtree(testDir)
         os.makedirs(testDir)
-        
+
         testFileName = 'test_ResolveWithContext.txt'
         testFilePath = os.path.join(testDir, testFileName) 
         with open(testFilePath, 'w') as ofp:
             print('Garbage', file=ofp)
-        
+
         resolver = Ar.GetResolver()
         context = Ar.DefaultResolverContext([
             os.path.abspath('test3'),
